@@ -155,6 +155,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--spacing-lg);
+  min-height: calc(100vh - 80px);
 }
 
 /* Card Components */

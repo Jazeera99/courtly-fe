@@ -1,6 +1,6 @@
 // src/components/auth/LoginForm.tsx
 import React, { useState } from 'react';
-import './AuthForms.css';
+import '../../styles/AuthForms.css';
 
 interface LoginFormProps {
   onSuccess: (userData: any) => void;

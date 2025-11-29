@@ -1,0 +1,1595 @@
+/* src/pages/BookingPage.css */
+.booking-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.booking-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.booking-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: center;
+}
+
+.steps-container {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-number {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.step-number.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+.step-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.step-number.active + .step-label {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Search & Filters */
+.search-filters {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+.search-box {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.search-box .form-input {
+  padding-left: 48px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.filters-row {
+  display: flex;
+  gap: 16px;
+}
+
+.filter-select {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #E0E0E0;
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Date Selection */
+.date-selection {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+.date-selection h3 {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.date-input {
+  max-width: 300px;
+}
+
+/* Courts Grid */
+.courts-grid h3 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.court-card {
+  background: var(--surface);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.court-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+}
+
+.court-card.selected {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--surface), rgba(30, 136, 229, 0.05));
+}
+
+.court-header {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.court-image {
+  font-size: 3rem;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  border-radius: 12px;
+}
+
+.court-info h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+}
+
+.court-venue {
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+}
+
+.court-details {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sport-type {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.indoor {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.indoor.yes {
+  background: #E8F5E8;
+  color: #2E7D32;
+}
+
+.indoor.no {
+  background: #FFF3E0;
+  color: #EF6C00;
+}
+
+.court-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.court-rating {
+  color: var(--accent);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.court-price {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.selected-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--success);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Time Slots */
+.time-selection-header {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.time-selection-header h2 {
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.time-selection-header p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.time-slots-section {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+.time-slots-section h3 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.time-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.time-slot-btn {
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.time-slot-btn:hover:not(.booked):not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.time-slot-btn.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.time-slot-btn.booked {
+  background: var(--error);
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+}
+
+.time-range {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.time-status {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Confirmation */
+.confirmation-header {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.confirmation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.booking-details h3,
+.payment-section h3 {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.details-card,
+.payment-card {
+  background: var(--background);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.price-summary {
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-top: 12px;
+}
+
+.total-amount {
+  color: var(--primary);
+}
+
+.payment-methods {
+  margin-bottom: 20px;
+}
+
+.payment-methods h4 {
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.notes-section {
+  margin-top: 20px;
+}
+
+/* Step Actions */
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* No Results */
+.no-results {
+  text-align: center;
+  padding: 40px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.no-results p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .confirmation-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .steps-container {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .booking-page {
+    padding: 16px;
+  }
+  
+  .booking-header h1 {
+    font-size: 2rem;
+  }
+  
+  .steps-container {
+    gap: 20px;
+  }
+  
+  .step-number {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .step-label {
+    font-size: 0.8rem;
+  }
+  
+  .filters-row {
+    flex-direction: column;
+  }
+  
+  .court-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .court-image {
+    align-self: center;
+  }
+  
+  .step-actions {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .step-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .time-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .court-footer {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+/* Tambahkan ini ke BookingPage.css */
+
+/* Date Selection Styles */
+.dates-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+  margin-top: 16px;
+}
+
+.date-button {
+  min-width: 80px;
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-button:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.date-button.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.date-day {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.date-number {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.date-month {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Court Card Improvements */
+.court-card {
+  background: var(--surface);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.court-description {
+  margin: 12px 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.court-facilities {
+  margin: 16px 0;
+}
+
+.facilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.facility-tag {
+  background: var(--background);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+}
+
+.court-location {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 4px 0 8px 0;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+/* Time Slot Improvements */
+.time-slot-btn {
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-price {
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Payment Options */
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+  border-color: var(--primary-light);
+  background: var(--background);
+}
+
+.payment-option input[type="radio"] {
+  margin: 0;
+}
+
+.payment-option span {
+  font-weight: 500;
+}
+
+/* No Results Styling */
+.no-results {
+  text-align: center;
+  padding: 60px 40px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 2px dashed var(--border);
+}
+
+.no-results-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.no-results h4 {
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.no-results p {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+/* Booking Summary */
+.booking-summary {
+  background: var(--background);
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.booking-summary p {
+  margin: 4px 0;
+  color: var(--text-secondary);
+}
+
+/* Responsive Improvements */
+@media (max-width: 768px) {
+  .dates-container {
+    gap: 8px;
+  }
+  
+  .date-button {
+    min-width: 70px;
+    padding: 12px 8px;
+  }
+  
+  .date-number {
+    font-size: 1.2rem;
+  }
+  
+  .court-facilities {
+    margin: 12px 0;
+  }
+  
+  .facilities-list {
+    gap: 4px;
+  }
+  
+  .facility-tag {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-button {
+    min-width: 60px;
+    padding: 10px 6px;
+  }
+  
+  .date-day {
+    font-size: 0.7rem;
+  }
+  
+  .date-number {
+    font-size: 1.1rem;
+  }
+  
+  .date-month {
+    font-size: 0.7rem;
+  }
+}
+
+/* Calendar Styles */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.month-nav-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.month-nav-btn:hover {
+  background: var(--primary-dark);
+  transform: scale(1.05);
+}
+
+.current-month {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.calendar-grid {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.week-day {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.dates-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.date-cell {
+  aspect-ratio: 1;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+}
+
+.date-cell:hover:not(.other-month):not(:disabled) {
+  border-color: var(--primary-light);
+  background: var(--background);
+  transform: translateY(-2px);
+}
+
+.date-cell.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.date-cell.today {
+  border-color: var(--accent);
+  background: rgba(255, 179, 0, 0.1);
+}
+
+.date-cell.other-month {
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.date-cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.date-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.day-name {
+  font-size: 0.75rem;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.today-indicator {
+  position: absolute;
+  bottom: 4px;
+  font-size: 0.6rem;
+  background: var(--accent);
+  color: var(--text-primary);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.date-cell.selected .today-indicator {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+/* Improved Time Selection */
+.time-selection-title {
+  color: var(--text-primary);
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.booking-summary-large {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-item-large {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  color: white;
+}
+
+.summary-item-large:last-child {
+  margin-bottom: 0;
+}
+
+.summary-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.summary-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: right;
+}
+
+.summary-value.price {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.time-slots-title {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.time-slots-grid-ordered {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.time-slot-btn-large {
+  padding: 20px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100px;
+}
+
+.time-slot-btn-large:hover:not(.booked):not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.time-slot-btn-large.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.time-slot-btn-large.booked {
+  background: var(--error);
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+}
+
+.time-range-large {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.time-status-large {
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.time-price-large {
+  font-size: 1rem;
+  font-weight: 700;
+  color: inherit;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.time-slot-btn-large:not(.selected) .time-price-large {
+  color: var(--primary);
+  border-top: 1px solid var(--border);
+}
+
+/* Section Title Improvements */
+.section-title {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+/* Text Color Improvements */
+.date-cell {
+  color: var(--text-primary);
+}
+
+.date-cell.other-month {
+  color: var(--text-secondary);
+}
+
+.date-cell.selected {
+  color: white;
+}
+
+.time-slot-btn-large {
+  color: var(--text-primary);
+}
+
+.time-slot-btn-large.selected {
+  color: white;
+}
+
+/* Responsive Design for Calendar */
+@media (max-width: 768px) {
+  .calendar-grid {
+    padding: 16px;
+  }
+  
+  .week-days {
+    gap: 4px;
+  }
+  
+  .week-day {
+    font-size: 0.8rem;
+    padding: 6px 0;
+  }
+  
+  .dates-grid {
+    gap: 4px;
+  }
+  
+  .date-cell {
+    padding: 6px;
+  }
+  
+  .date-number {
+    font-size: 1rem;
+  }
+  
+  .day-name {
+    font-size: 0.7rem;
+  }
+  
+  .today-indicator {
+    font-size: 0.5rem;
+    bottom: 2px;
+  }
+  
+  .time-slots-grid-ordered {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .time-slot-btn-large {
+    min-height: 90px;
+    padding: 16px 12px;
+  }
+  
+  .time-range-large {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .month-nav-btn {
+    padding: 8px 12px;
+    font-size: 1rem;
+  }
+  
+  .current-month {
+    font-size: 1.1rem;
+  }
+  
+  .time-slots-grid-ordered {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .time-slot-btn-large {
+    min-height: 80px;
+    padding: 12px 8px;
+  }
+  
+  .time-range-large {
+    font-size: 0.9rem;
+  }
+  
+  .time-status-large {
+    font-size: 0.8rem;
+  }
+  
+  .time-price-large {
+    font-size: 0.9rem;
+  }
+  
+  .summary-item-large {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .summary-value {
+    text-align: left;
+  }
+}
+
+/* Perbaikan untuk kalender yang lebih terpusat dan rapi */
+.calendar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.calendar-grid {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.week-day {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  padding: 12px 0;
+  background: var(--primary-light);
+  border-radius: 8px;
+}
+
+.dates-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+/* Perbaikan untuk sel tanggal */
+.date-cell {
+  aspect-ratio: 1;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+  min-height: 80px;
+}
+
+/* Style untuk tanggal yang sudah lewat */
+.date-cell.past-date {
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: var(--border);
+}
+
+.date-cell.past-date:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--background);
+}
+
+/* Perbaikan untuk time slots yang tetap dan terurut */
+.time-slots-section {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.time-slots-grid-fixed {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.time-slot-btn-fixed {
+  padding: 20px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Style untuk time slot yang sudah lewat */
+.time-slot-btn-fixed.past-time {
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: var(--border);
+}
+
+.time-slot-btn-fixed.past-time:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--background);
+}
+
+/* Memastikan kalender tetap di tengah pada semua ukuran layar */
+@media (max-width: 768px) {
+  .calendar-grid {
+    padding: 16px;
+    max-width: 95%;
+  }
+  
+  .week-days {
+    gap: 4px;
+  }
+  
+  .week-day {
+    font-size: 0.8rem;
+    padding: 8px 0;
+  }
+  
+  .dates-grid {
+    gap: 4px;
+  }
+  
+  .date-cell {
+    min-height: 60px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-grid {
+    padding: 12px;
+  }
+  
+  .date-cell {
+    min-height: 50px;
+  }
+  
+  .date-number {
+    font-size: 0.9rem;
+  }
+  
+  .day-name {
+    font-size: 0.6rem;
+  }
+}
+
+/* Indikator untuk tanggal/waktu yang sudah lewat */
+.past-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.past-date .past-indicator {
+  color: var(--error);
+}
+
+/* Memastikan time slots tetap pada posisinya */
+.time-slots-grid-fixed {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.time-slot-btn-fixed {
+  padding: 20px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Hover effects hanya untuk yang available */
+.time-slot-btn-fixed:not(.booked):not(.past-time):not(:disabled):hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.time-slot-btn-fixed.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.time-slot-btn-fixed.booked {
+  background: var(--error);
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.time-slot-btn-fixed.past-time {
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Perbaikan background dan posisi kalender */
+.date-selection {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.calendar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.calendar-grid {
+  width: 100%;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Header kalender di tengah */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 10px;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* Grid hari dan tanggal yang terpusat sempurna */
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.week-day {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  padding: 12px 0;
+  background: rgba(30, 136, 229, 0.1);
+  border-radius: 8px;
+}
+
+.dates-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+/* Perbaikan sel tanggal */
+.date-cell {
+  aspect-ratio: 1;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+  min-height: 80px;
+  color: var(--text-primary);
+}
+
+/* Style untuk tanggal yang sudah lewat */
+.date-cell.past-date {
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: var(--border);
+}
+
+.date-cell.past-date:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--background);
+}
+
+.date-cell.other-month {
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Perbaikan untuk today */
+.date-cell.today {
+  border-color: var(--accent);
+  background: rgba(255, 179, 0, 0.1);
+}
+
+.date-cell.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+/* Indikator */
+.today-indicator {
+  position: absolute;
+  bottom: 4px;
+  font-size: 0.6rem;
+  background: var(--accent);
+  color: var(--text-primary);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.date-cell.selected .today-indicator {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.past-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  color: var(--error);
+}
+
+/* Responsive design untuk kalender */
+@media (max-width: 768px) {
+  .calendar-grid {
+    padding: 16px;
+  }
+  
+  .week-days {
+    gap: 4px;
+  }
+  
+  .week-day {
+    font-size: 0.8rem;
+    padding: 8px 0;
+  }
+  
+  .dates-grid {
+    gap: 4px;
+  }
+  
+  .date-cell {
+    min-height: 60px;
+    padding: 6px;
+  }
+  
+  .date-number {
+    font-size: 1rem;
+  }
+  
+  .day-name {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .month-nav-btn {
+    padding: 8px 12px;
+    font-size: 1rem;
+  }
+  
+  .current-month {
+    font-size: 1.1rem;
+  }
+  
+  .date-cell {
+    min-height: 50px;
+  }
+  
+  .date-number {
+    font-size: 0.9rem;
+  }
+  
+  .day-name {
+    font-size: 0.6rem;
+  }
+}
+
+.court-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.court-actions .btn {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}

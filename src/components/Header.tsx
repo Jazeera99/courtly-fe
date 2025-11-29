@@ -11,6 +11,7 @@ interface HeaderProps {
   onToggleDarkMode: () => void;
   onLogin: (userData: any) => void;
   onLogout: () => void;
+  user?: any; // Tambahkan ini
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -18,7 +19,8 @@ const Header: React.FC<HeaderProps> = ({
   darkMode, 
   onToggleDarkMode,
   onLogin,
-  onLogout
+  onLogout,
+  user,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -104,14 +106,14 @@ const Header: React.FC<HeaderProps> = ({
               <div className="auth-buttons">
                 <button 
                   className="btn btn-outline"
-                  onClick={() => navigate('/auth?mode=login')}
+                  onClick={() => navigate('ogin')}
                   style={{ color: 'white', borderColor: 'white' }}
                 >
                   Masuk
                 </button>
                 <button 
                   className="btn btn-accent"
-                  onClick={() => navigate('/auth?mode=register')}
+                  onClick={() => navigate('register')}
                 >
                   Daftar
                 </button>

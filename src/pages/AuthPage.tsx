@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
-import '../components/auth/AuthForms.css';
+import '../styles/AuthPage.css';
 
 interface AuthPageProps {
   onSuccess: (userData: any) => void;

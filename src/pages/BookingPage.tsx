@@ -1,200 +1,750 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/BookingPage.css';
+
+interface Court {
+  id: string;
+  name: string;
+  venue: string;
+  type: string;
+  sport: string;
+  indoor: boolean;
+  price: number;
+  rating: number;
+  image: string;
+  description: string;
+  facilities: string[];
+  location: string;
+}
+
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  courtId: string;
+}
 
 const BookingPage: React.FC = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    console.log('BookingPage mounted');
+  }, []);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [selectedVenue, setSelectedVenue] = useState<string>('');
+  const [selectedCourt, setSelectedCourt] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sportFilter, setSportFilter] = useState<string>('all');
+  const [priceFilter, setPriceFilter] = useState<string>('all');
   const [step, setStep] = useState<number>(1);
+  
+  // Store current month as YYYY-MM string to avoid timezone issues
+  const today = new Date();
+  const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const [currentMonth, setCurrentMonth] = useState<string>(currentYearMonth);
 
-  const venues = [
-    { id: '1', name: 'GOR Sidoarjo Sport Center', type: 'Futsal', price: 150000 },
-    { id: '2', name: 'Lapangan Basket Sidoarjo', type: 'Basket', price: 100000 },
-    { id: '3', name: 'Sidoarjo Tennis Court', type: 'Tenis', price: 200000 },
+  // Monitor selectedDate changes
+  useEffect(() => {
+    console.log('selectedDate changed to:', selectedDate);
+  }, [selectedDate]);
+
+  // Data courts/lapangan yang lengkap
+  const courts: Court[] = [
+    {
+      id: '1',
+      name: 'Court A - Premium',
+      venue: 'Balikpapan Padel Club',
+      type: 'Padel Court',
+      sport: 'padel',
+      indoor: true,
+      price: 250000,
+      rating: 4.9,
+      image: '🎾',
+      description: 'Lapangan padel premium dengan surface berkualitas tinggi, cocok untuk pertandingan profesional',
+      facilities: ['AC', 'Lighting', 'Changing Room', 'Shower'],
+      location: 'Jl. Sudirman No. 123, Balikpapan'
+    },
+    {
+      id: '2',
+      name: 'Court B - Standard',
+      venue: 'Balikpapan Padel Club',
+      type: 'Padel Court',
+      sport: 'padel',
+      indoor: true,
+      price: 200000,
+      rating: 4.7,
+      image: '🎾',
+      description: 'Lapangan padel standar dengan fasilitas lengkap untuk latihan dan pertandingan casual',
+      facilities: ['AC', 'Lighting', 'Changing Room'],
+      location: 'Jl. Sudirman No. 123, Balikpapan'
+    },
+    {
+      id: '3',
+      name: 'Lapangan Futsal 1',
+      venue: 'GOR Sidoarjo Sport Center',
+      type: 'Futsal',
+      sport: 'futsal',
+      indoor: true,
+      price: 150000,
+      rating: 4.6,
+      image: '⚽',
+      description: 'Lapangan futsal indoor dengan rumput sintetis berkualitas, ukuran standar nasional',
+      facilities: ['AC', 'Tribune', 'Lighting', 'Music System'],
+      location: 'Jl. Pahlawan No. 45, Sidoarjo'
+    },
+    {
+      id: '4',
+      name: 'Lapangan Futsal 2',
+      venue: 'GOR Sidoarjo Sport Center',
+      type: 'Futsal',
+      sport: 'futsal',
+      indoor: true,
+      price: 130000,
+      rating: 4.5,
+      image: '⚽',
+      description: 'Lapangan futsal dengan surface terbaru, cocok untuk latihan tim',
+      facilities: ['AC', 'Lighting', 'Changing Room'],
+      location: 'Jl. Pahlawan No. 45, Sidoarjo'
+    },
+    {
+      id: '5',
+      name: 'Lapangan Basket Utama',
+      venue: 'Sidoarjo Basketball Court',
+      type: 'Basket',
+      sport: 'basket',
+      indoor: false,
+      price: 120000,
+      rating: 4.4,
+      image: '🏀',
+      description: 'Lapangan basket outdoor dengan flooring berkualitas, ring profesional',
+      facilities: ['Lighting', 'Bench', 'Scoreboard'],
+      location: 'Jl. Merdeka No. 67, Sidoarjo'
+    },
+    {
+      id: '6',
+      name: 'Court Tenis 1',
+      venue: 'Sidoarjo Tennis Complex',
+      type: 'Tenis',
+      sport: 'tennis',
+      indoor: false,
+      price: 180000,
+      rating: 4.7,
+      image: '🎾',
+      description: 'Lapangan tenis hard court dengan surface standar internasional',
+      facilities: ['Lighting', 'Net', 'Bench'],
+      location: 'Jl. Sport No. 89, Sidoarjo'
+    },
+    {
+      id: '7',
+      name: 'Lapangan Badminton A',
+      venue: 'GOR Sidoarjo Sport Center',
+      type: 'Badminton',
+      sport: 'badminton',
+      indoor: true,
+      price: 80000,
+      rating: 4.3,
+      image: '🏸',
+      description: 'Lapangan badminton indoor dengan lighting profesional, lantai kayu maple',
+      facilities: ['AC', 'Lighting', 'Changing Room'],
+      location: 'Jl. Pahlawan No. 45, Sidoarjo'
+    },
+    {
+      id: '8',
+      name: 'Lapangan Badminton B',
+      venue: 'GOR Sidoarjo Sport Center',
+      type: 'Badminton',
+      sport: 'badminton',
+      indoor: true,
+      price: 70000,
+      rating: 4.2,
+      image: '🏸',
+      description: 'Lapangan badminton untuk latihan dengan harga terjangkau',
+      facilities: ['AC', 'Lighting'],
+      location: 'Jl. Pahlawan No. 45, Sidoarjo'
+    },
+    {
+      id: '9',
+      name: 'Lapangan Voli Pantai',
+      venue: 'Sidoarjo Beach Sport Arena',
+      type: 'Voli Pantai',
+      sport: 'volleyball',
+      indoor: false,
+      price: 100000,
+      rating: 4.5,
+      image: '🏐',
+      description: 'Lapangan voli pantai dengan pasir putih berkualitas, area yang luas',
+      facilities: ['Beach Area', 'Shower', 'Rest Area'],
+      location: 'Pantai Sidoarjo, Jawa Timur'
+    }
   ];
 
+// Generate dates untuk 1 bulan penuh
+    const getDatesForMonth = (yearMonthStr: string) => {
+    const dates = [];
+    
+    // Parse YYYY-MM format
+    const [yearStr, monthStr] = yearMonthStr.split('-');
+    const year = parseInt(yearStr);
+    const monthIndex = parseInt(monthStr) - 1; // Convert to 0-based month
+    
+    console.log('getDatesForMonth - yearMonthStr:', yearMonthStr, 'year:', year, 'monthIndex:', monthIndex);
+    
+    // Dapatkan hari pertama bulan
+    const firstDay = new Date(year, monthIndex, 1);
+    const firstDayOfWeek = firstDay.getDay(); // 0 = Minggu, 1 = Senin, dst.
+    
+    console.log('firstDay:', firstDay.toDateString(), 'firstDayOfWeek:', firstDayOfWeek);
+    
+    // Tanggal mulai dari bulan sebelumnya
+    const startDate = new Date(year, monthIndex, 1 - firstDayOfWeek);
+    
+    console.log('startDate:', startDate.toDateString());
+    
+    // Jumlah sel kalender (6 minggu x 7 hari)
+    const totalCells = 42;
+    const todayObj = new Date();
+    const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+    
+    for (let i = 0; i < totalCells; i++) {
+      const current = new Date(year, monthIndex, 1 - firstDayOfWeek + i);
+      const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+      
+      if (i < 7 || i >= 35) {
+        console.log(`i=${i}, date: ${dateStr}, display: ${current.getDate()}, isCurrentMonth: ${current.getMonth() === monthIndex}`);
+      }
+      
+      dates.push({
+        date: dateStr,
+        display: current.getDate().toString(),
+        dayName: current.toLocaleDateString('id-ID', { weekday: 'short' }),
+        isCurrentMonth: current.getMonth() === monthIndex,
+        isToday: dateStr === todayStr,
+        isPast: dateStr < todayStr,
+        fullDate: current
+      });
+    }
+  
+  return dates;
+  };
+
+  const availableDates = getDatesForMonth(currentMonth);
+
+  // Navigasi bulan
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prev => {
+      const [year, month] = prev.split('-').map(Number);
+      let newMonth = month - 1;
+      let newYear = year;
+      if (newMonth < 1) {
+        newMonth = 12;
+        newYear -= 1;
+      }
+      return `${newYear}-${String(newMonth).padStart(2, '0')}`;
+    });
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(prev => {
+      const [year, month] = prev.split('-').map(Number);
+      let newMonth = month + 1;
+      let newYear = year;
+      if (newMonth > 12) {
+        newMonth = 1;
+        newYear += 1;
+      }
+      return `${newYear}-${String(newMonth).padStart(2, '0')}`;
+    });
+  };
+
+  // Time slots lengkap dan terurut
   const timeSlots = [
-    '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00',
-    '19:00', '20:00', '21:00'
+    '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
+    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
+    '20:00', '21:00', '22:00', '23:00'
   ];
 
-  const bookedSlots = ['09:00', '14:00', '18:00']; // Example booked slots
+  // Fungsi untuk cek apakah waktu sudah lewat
+  const isTimeInPast = (selectedDate: string, time: string) => {
+  if (!selectedDate) return false;
+  
+  const now = new Date();
+  const [hours] = time.split(':').map(Number);
+  const slotDateTime = new Date(selectedDate);
+  slotDateTime.setHours(hours, 0, 0, 0);
+  
+  return slotDateTime < now;
+};
 
+
+  // Mock data untuk jadwal yang sudah dibooking (lebih realistis)
+  const generateBookedSlots = (): TimeSlot[] => {
+    const booked: TimeSlot[] = [];
+    const courtsToBook = ['1', '2', '3', '4'];
+    
+    courtsToBook.forEach(courtId => {
+      // Book random time slots untuk setiap court
+      const randomSlots = timeSlots
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 4); // Book 4 random slots per court
+        
+      randomSlots.forEach(time => {
+        booked.push({ time, available: false, courtId });
+      });
+    });
+    
+    return booked;
+  };
+
+  const bookedSlots = generateBookedSlots();
+
+  // Filter courts berdasarkan pencarian dan filter
+  const filteredCourts = courts.filter(court => {
+    const matchesSearch = court.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         court.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         court.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSport = sportFilter === 'all' || court.sport === sportFilter;
+    const matchesPrice = priceFilter === 'all' || 
+                        (priceFilter === 'low' && court.price < 100000) ||
+                        (priceFilter === 'medium' && court.price >= 100000 && court.price <= 200000) ||
+                        (priceFilter === 'high' && court.price > 200000);
+    
+    return matchesSearch && matchesSport && matchesPrice;
+  });
+
+  // Cek ketersediaan time slot untuk court tertentu
+  const isTimeSlotAvailable = (courtId: string, time: string) => {
+    const booked = bookedSlots.find(slot => 
+      slot.courtId === courtId && slot.time === time && !slot.available
+    );
+    return !booked;
+  };
+
+  // Reset selection ketika date berubah
+  useEffect(() => {
+    setSelectedTime('');
+    setSelectedCourt('');
+  }, [selectedDate]);
+
+  // Step 1: Pilih Tanggal & Cari Lapangan
   const renderStep1 = () => (
-    <div className="card">
-      <h2 style={{ marginBottom: '24px' }}>Pilih Lapangan</h2>
-      <div className="grid grid-2">
-        {venues.map(venue => (
-          <div 
-            key={venue.id}
-            className={`card ${selectedVenue === venue.id ? 'selected' : ''}`}
-            style={{ 
-              cursor: 'pointer',
-              border: selectedVenue === venue.id ? '2px solid var(--primary)' : '2px solid transparent',
-              transition: 'all 0.3s ease'
-            }}
-            onClick={() => setSelectedVenue(venue.id)}
+    <div className="booking-step">
+      <div className="search-filters">
+        <div className="search-box">
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Cari lapangan, venue, atau lokasi..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <span className="search-icon">🔍</span>
+        </div>
+
+        <div className="filters-row">
+          <select 
+            className="filter-select"
+            value={sportFilter}
+            onChange={(e) => setSportFilter(e.target.value)}
           >
-            <div style={{ fontSize: '3rem', textAlign: 'center', marginBottom: '16px' }}>
-              {venue.type === 'Futsal' ? '⚽' : venue.type === 'Basket' ? '🏀' : '🎾'}
-            </div>
-            <h3 style={{ marginBottom: '8px' }}>{venue.name}</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              {venue.type}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
-                Rp {venue.price.toLocaleString()}/jam
-              </span>
-              {selectedVenue === venue.id && (
-                <span style={{ color: 'var(--success)' }}>✓ Terpilih</span>
-              )}
-            </div>
-          </div>
-        ))}
+            <option value="all">Semua Olahraga</option>
+            <option value="padel">Padel</option>
+            <option value="futsal">Futsal</option>
+            <option value="basket">Basket</option>
+            <option value="tennis">Tennis</option>
+            <option value="badminton">Badminton</option>
+            <option value="volleyball">Voli</option>
+          </select>
+
+          <select 
+            className="filter-select"
+            value={priceFilter}
+            onChange={(e) => setPriceFilter(e.target.value)}
+          >
+            <option value="all">Semua Harga</option>
+            <option value="low">Dibawah Rp 100k</option>
+            <option value="medium">Rp 100k - 200k</option>
+            <option value="high">Diatas Rp 200k</option>
+          </select>
+        </div>
       </div>
-      <div style={{ textAlign: 'right', marginTop: '24px' }}>
-        <button 
-          className="btn btn-primary"
-          disabled={!selectedVenue}
-          onClick={() => setStep(2)}
-        >
-          Lanjut ke Jadwal →
-        </button>
+
+      <div className="date-selection">
+        <div className="calendar-header">
+          <button className="month-nav-btn" onClick={goToPreviousMonth}>
+            ←
+          </button>
+          <h3 className="current-month">
+            {new Date(`${currentMonth}-01`).toLocaleDateString('id-ID', { 
+              month: 'long', 
+              year: 'numeric' 
+            })}
+          </h3>
+          <button className="month-nav-btn" onClick={goToNextMonth}>
+            →
+          </button>
+        </div>
+
+        <div className="calendar-container">
+          <div className="calendar-grid">
+    
+
+        {/* Grid tanggal - DI TENGAH SEMPURNA */}
+        <div className="dates-grid">
+          {availableDates.map((dateObj, index) => {
+            // Debug: console log untuk memastikan tanggal benar
+            const handleDateClick = () => {
+              if (dateObj.isCurrentMonth && !dateObj.isPast) {
+                console.log('Tanggal dipilih:', dateObj.date, 'Display:', dateObj.display);
+                setSelectedDate(dateObj.date);
+              }
+            };
+            return (
+               <button
+              key={`${dateObj.date}-${index}`}
+              className={`date-cell ${
+                !dateObj.isCurrentMonth ? 'other-month' : ''
+              } ${dateObj.isToday ? 'today' : ''} ${
+                selectedDate === dateObj.date ? 'selected' : ''
+              } ${dateObj.isPast ? 'past-date' : ''}`}
+              onClick={handleDateClick}
+              disabled={!dateObj.isCurrentMonth || dateObj.isPast}
+              title={dateObj.date} // Tooltip untuk debugging
+            >
+              <div className="date-number">{dateObj.display}</div>
+              <div className="day-name">{dateObj.dayName}</div>
+              {dateObj.isToday && <div className="today-indicator">Hari ini</div>}
+              {dateObj.isPast && <div className="past-indicator">⛔</div>}
+            </button>
+          );
+        })}
       </div>
     </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="card">
-      <h2 style={{ marginBottom: '24px' }}>Pilih Tanggal & Waktu</h2>
-      
-      <div className="form-group">
-        <label className="form-label">Pilih Tanggal</label>
-        <input
-          type="date"
-          className="form-input"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          min={new Date().toISOString().split('T')[0]}
-        />
-      </div>
+  </div>
+</div>
 
       {selectedDate && (
-        <>
-          <h3 style={{ marginBottom: '16px' }}>Pilih Slot Waktu</h3>
-          <div className="time-slots">
-            {timeSlots.map(time => {
-              const isBooked = bookedSlots.includes(time);
-              const isSelected = selectedTime === time;
-              
-              return (
-                <div
-                  key={time}
-                  className={`time-slot ${isSelected ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
-                  onClick={() => !isBooked && setSelectedTime(time)}
-                >
-                  {time}
-                  {isBooked && <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>⛔ Penuh</div>}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+        <div className="courts-section">
+          <h3>🏟️ Pilih Lapangan Tersedia</h3>
+          <p className="section-subtitle">Tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</p>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
-        <button 
-          className="btn btn-outline"
-          onClick={() => setStep(1)}
-        >
-          ← Kembali
-        </button>
-        <button 
-          className="btn btn-primary"
-          disabled={!selectedDate || !selectedTime}
-          onClick={() => setStep(3)}
-        >
-          Lanjut ke Pembayaran →
-        </button>
-      </div>
+          {/* Debug info - bisa dihapus setelah testing */}
+          <div style={{ 
+            background: '#f0f8ff', 
+            padding: '10px', 
+            borderRadius: '8px', 
+            marginBottom: '15px',
+            fontSize: '0.9rem',
+            color: '#666'
+          }}>
+            <strong>Debug Info:</strong> Selected Date: {selectedDate}
+          </div>
+          
+          <div className="courts-grid">
+            {filteredCourts.map(court => (
+              <div 
+                key={court.id}
+                className={`court-card ${selectedCourt === court.id ? 'selected' : ''}`}
+                onClick={() => setSelectedCourt(court.id)}
+              >
+                <div className="court-header">
+                  <div className="court-image">{court.image}</div>
+                  <div className="court-info">
+                    <h4>{court.name}</h4>
+                    <p className="court-venue">{court.venue}</p>
+                    <p className="court-location">📍 {court.location}</p>
+                    <div className="court-details">
+                      <span className="sport-type">{court.type}</span>
+                      <span className={`indoor ${court.indoor ? 'yes' : 'no'}`}>
+                        {court.indoor ? '🏠 Indoor' : '☀️ Outdoor'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="court-description">
+                  <p>{court.description}</p>
+                </div>
+
+                <div className="court-facilities">
+                  <strong>Fasilitas:</strong>
+                  <div className="facilities-list">
+                    {court.facilities.map((facility, index) => (
+                      <span key={index} className="facility-tag">✓ {facility}</span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="court-footer">
+                  <div className="court-rating">
+                    ⭐ {court.rating}
+                  </div>
+                  <div className="court-price">
+                    <span className="price-amount">Rp {court.price.toLocaleString()}</span>
+                    <span className="price-unit">/jam</span>
+                  </div>
+                </div>
+
+                <div className="court-actions">
+                  <button 
+                    className="btn btn-outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/venue/${court.id}`);
+                    }}
+                  >
+                    👁️ Lihat Detail
+                  </button>
+                </div>
+
+                {selectedCourt === court.id && (
+                  <div className="selected-indicator">
+                    ✓ Terpilih
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {filteredCourts.length === 0 && (
+            <div className="no-results">
+              <div className="no-results-icon">😔</div>
+              <h4>Tidak ada lapangan yang ditemukan</h4>
+              <p>Coba ubah kata kunci pencarian atau filter yang Anda gunakan</p>
+              <button 
+                className="btn btn-outline"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSportFilter('all');
+                  setPriceFilter('all');
+                }}
+              >
+                🔄 Reset Filter
+              </button>
+            </div>
+          )}
+
+          {filteredCourts.length > 0 && (
+            <div className="step-actions">
+              <button 
+                className="btn btn-primary"
+                disabled={!selectedCourt}
+                onClick={() => setStep(2)}
+              >
+                🕐 Lanjut ke Pilih Waktu →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
-  const renderStep3 = () => {
-    const selectedVenueData = venues.find(v => v.id === selectedVenue);
+  // Step 2: Pilih Waktu
+    const renderStep2 = () => {
+    const selectedCourtData = courts.find(c => c.id === selectedCourt);
     
     return (
-      <div className="card">
-        <h2 style={{ marginBottom: '24px' }}>Konfirmasi Booking</h2>
-        
-        <div className="grid grid-2">
-          <div>
-            <h3 style={{ marginBottom: '16px' }}>Detail Pesanan</h3>
-            <div style={{ background: 'var(--background)', padding: '16px', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Lapangan:</span>
-                <strong>{selectedVenueData?.name}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Tanggal:</span>
-                <strong>{selectedDate}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Waktu:</span>
-                <strong>{selectedTime}:00 - {parseInt(selectedTime) + 1}:00</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Durasi:</span>
-                <strong>1 Jam</strong>
-              </div>
-              <hr style={{ margin: '16px 0', border: '1px solid #E0E0E0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                <span>Total:</span>
-                <span style={{ color: 'var(--primary)' }}>
-                  Rp {selectedVenueData?.price.toLocaleString()}
-                </span>
-              </div>
+      <div className="booking-step">
+        <div className="time-selection-header">
+          <h2 className="time-selection-title">🕐 Pilih Waktu Booking</h2>
+          <div className="booking-summary-large">
+            <div className="summary-item-large">
+              <span className="summary-label">Lapangan:</span>
+              <span className="summary-value">{selectedCourtData?.name}</span>
             </div>
-          </div>
-
-          <div>
-            <h3 style={{ marginBottom: '16px' }}>Metode Pembayaran</h3>
-            <div className="form-group">
-              <select className="form-select">
-                <option value="">Pilih metode pembayaran</option>
-                <option value="bca">BCA Virtual Account</option>
-                <option value="bni">BNI Virtual Account</option>
-                <option value="mandiri">Mandiri Virtual Account</option>
-                <option value="gopay">Gopay</option>
-                <option value="shopeepay">ShopeePay</option>
-                <option value="qris">QRIS</option>
-              </select>
+            <div className="summary-item-large">
+              <span className="summary-label">Tanggal:</span>
+              <span className="summary-value">
+                {new Date(selectedDate).toLocaleDateString('id-ID', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Catatan (Opsional)</label>
-              <textarea 
-                className="form-textarea" 
-                rows={3}
-                placeholder="Tambahkan catatan khusus jika diperlukan..."
-              />
+            <div className="summary-item-large">
+              <span className="summary-label">Harga:</span>
+              <span className="summary-value price">Rp {selectedCourtData?.price.toLocaleString()}/jam</span>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
+        <div className="time-slots-section">
+          <h3 className="time-slots-title">⏰ Slot Waktu Tersedia</h3>
+          <div className="time-slots-grid-ordered">
+            {timeSlots.map(time => {
+              const isAvailable = isTimeSlotAvailable(selectedCourt, time);
+              const isSelected = selectedTime === time;
+              const isPast = isTimeInPast(selectedDate, time);
+              
+              return (
+                <button
+                  key={time}
+                  className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${
+                    !isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
+                  onClick={() => isAvailable && !isPast && setSelectedTime(time)}
+                  disabled={!isAvailable || isPast}
+                >
+                  <div className="time-range-large">{time} - {parseInt(time) + 1}:00</div>
+                  <div className="time-status-large">
+                    {!isAvailable ? '⛔ Penuh' : isPast ? '⌛ Lewat' : '✅ Tersedia'}
+                  </div>
+                  {isAvailable && !isPast && (
+                    <div className="time-price-large">
+                      Rp {selectedCourtData?.price.toLocaleString()}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="step-actions">
+          <button 
+            className="btn btn-outline"
+            onClick={() => setStep(1)}
+          >
+            ← Kembali ke Pilih Lapangan
+          </button>
+          <button 
+            className="btn btn-primary"
+            disabled={!selectedTime}
+            onClick={() => setStep(3)}
+          >
+            💳 Lanjut ke Pembayaran →
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Step 3: Konfirmasi & Pembayaran
+  const renderStep3 = () => {
+    const selectedCourtData = courts.find(c => c.id === selectedCourt);
+    
+    return (
+      <div className="booking-step">
+        <div className="confirmation-header">
+          <h2>✅ Konfirmasi Booking</h2>
+          <p>Review detail pesanan Anda sebelum melanjutkan pembayaran</p>
+        </div>
+
+        <div className="confirmation-grid">
+          <div className="booking-details">
+            <h3>📋 Detail Pesanan</h3>
+            <div className="details-card">
+              <div className="detail-item">
+                <span>Lapangan:</span>
+                <strong>{selectedCourtData?.name}</strong>
+              </div>
+              <div className="detail-item">
+                <span>Venue:</span>
+                <span>{selectedCourtData?.venue}</span>
+              </div>
+              <div className="detail-item">
+                <span>Lokasi:</span>
+                <span>{selectedCourtData?.location}</span>
+              </div>
+              <div className="detail-item">
+                <span>Tanggal:</span>
+                <span>{new Date(selectedDate).toLocaleDateString('id-ID', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</span>
+              </div>
+              <div className="detail-item">
+                <span>Waktu:</span>
+                <span>{selectedTime}:00 - {parseInt(selectedTime) + 1}:00</span>
+              </div>
+              <div className="detail-item">
+                <span>Durasi:</span>
+                <span>1 Jam</span>
+              </div>
+              <div className="detail-item">
+                <span>Jenis Lapangan:</span>
+                <span>{selectedCourtData?.type}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="payment-section">
+            <h3>💰 Pembayaran</h3>
+            <div className="payment-card">
+              <div className="price-summary">
+                <div className="summary-item">
+                  <span>Harga per jam:</span>
+                  <span>Rp {selectedCourtData?.price.toLocaleString()}</span>
+                </div>
+                <div className="summary-item">
+                  <span>Durasi:</span>
+                  <span>1 Jam</span>
+                </div>
+                <hr />
+                <div className="summary-total">
+                  <span>Total Pembayaran:</span>
+                  <span className="total-amount">
+                    Rp {selectedCourtData?.price.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="payment-methods">
+                <h4>💳 Metode Pembayaran</h4>
+                <div className="payment-options">
+                  <label className="payment-option">
+                    <input type="radio" name="payment" value="bca" defaultChecked />
+                    <span>BCA Virtual Account</span>
+                  </label>
+                  <label className="payment-option">
+                    <input type="radio" name="payment" value="bni" />
+                    <span>BNI Virtual Account</span>
+                  </label>
+                  <label className="payment-option">
+                    <input type="radio" name="payment" value="mandiri" />
+                    <span>Mandiri Virtual Account</span>
+                  </label>
+                  <label className="payment-option">
+                    <input type="radio" name="payment" value="gopay" />
+                    <span>Gopay</span>
+                  </label>
+                  <label className="payment-option">
+                    <input type="radio" name="payment" value="qris" />
+                    <span>QRIS</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="notes-section">
+                <label className="form-label">📝 Catatan (Opsional)</label>
+                <textarea 
+                  className="form-textarea" 
+                  rows={3}
+                  placeholder="Tambahkan catatan khusus untuk venue atau instruksi khusus..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="step-actions">
           <button 
             className="btn btn-outline"
             onClick={() => setStep(2)}
           >
-            ← Kembali
+            ← Kembali ke Pilih Waktu
           </button>
           <button 
             className="btn btn-primary"
-            style={{ padding: '12px 32px' }}
+            style={{ padding: '12px 32px', fontSize: '1.1rem' }}
           >
-            💳 Bayar Sekarang
+            🎯 Konfirmasi & Bayar
           </button>
         </div>
       </div>
@@ -203,56 +753,37 @@ const BookingPage: React.FC = () => {
 
   return (
     <div className="booking-page">
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <h1>Booking Lapangan</h1>
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-          {[1, 2, 3].map(num => (
-            <div key={num} style={{ display: 'flex', alignItems: 'center' }}>
-              <div 
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  background: step >= num ? 'var(--primary)' : 'var(--background)',
-                  color: step >= num ? 'white' : 'var(--text-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  border: step === num ? '2px solid var(--primary-dark)' : 'none'
-                }}
-              >
-                {num}
+      {/* Debug banner to check rendering */}
+      <div style={{ background: '#ffefc2', padding: '10px', borderRadius: 8, marginBottom: 12, color: '#333', textAlign: 'center' }}>
+        DEBUG: BookingPage component mounted
+      </div>
+      {/* Progress Steps */}
+      <div className="booking-header">
+        <h1>🏀 Booking Lapangan</h1>
+        <div className="progress-steps">
+          <div className="steps-container">
+            {[1, 2, 3].map(num => (
+              <div key={num} className="step-item">
+                <div className={`step-number ${step >= num ? 'active' : ''}`}>
+                  {num}
+                </div>
+                <div className="step-label">
+                  {num === 1 && 'Pilih Lapangan'}
+                  {num === 2 && 'Pilih Waktu'}
+                  {num === 3 && 'Pembayaran'}
+                </div>
               </div>
-              {num < 3 && (
-                <div 
-                  style={{
-                    width: '60px',
-                    height: '2px',
-                    background: step > num ? 'var(--primary)' : 'var(--background)',
-                    margin: '0 8px'
-                  }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px', gap: '120px' }}>
-          <span style={{ fontSize: '0.9rem', color: step >= 1 ? 'var(--primary)' : 'var(--text-secondary)' }}>
-            Pilih Lapangan
-          </span>
-          <span style={{ fontSize: '0.9rem', color: step >= 2 ? 'var(--primary)' : 'var(--text-secondary)' }}>
-            Pilih Waktu
-          </span>
-          <span style={{ fontSize: '0.9rem', color: step >= 3 ? 'var(--primary)' : 'var(--text-secondary)' }}>
-            Pembayaran
-          </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {step === 1 && renderStep1()}
-      {step === 2 && renderStep2()}
-      {step === 3 && renderStep3()}
+      {/* Main Content */}
+      <div className="booking-content">
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
+      </div>
     </div>
   );
 };

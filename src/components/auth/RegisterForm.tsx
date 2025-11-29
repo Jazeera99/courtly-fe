@@ -1,6 +1,6 @@
 // src/components/auth/RegisterForm.tsx
 import React, { useState } from 'react';
-import './AuthForms.css';
+import '../../styles/AuthForms.css';
 
 interface RegisterFormProps {
   onSuccess: (userData: any) => void;

@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage';
 import BookingPage from './pages/BookingPage';
 import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
+import VenueDetailPage from './pages/VenueDetailPage';
 import './App.css';
 
 type UserRole = 'guest' | 'user' | 'vendor' | 'admin';
@@ -50,14 +51,16 @@ function App() {
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         onLogin={handleLogin}
         onLogout={handleLogout}
+        user={user}
       />
 
       <main className="main-content">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/booking" element={<BookingPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<ProfilePage user={user} />} />
           <Route path="/auth" element={<AuthPage onSuccess={handleAuthSuccess} />} />
+          <Route path="/venue/:id" element={<VenueDetailPage />} />
         </Routes>
       </main>
     </div>
