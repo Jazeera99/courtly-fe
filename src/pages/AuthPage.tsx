@@ -1,8 +1,9 @@
 // src/pages/AuthPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
+import { useToast } from '../components/Toast';
 import '../styles/AuthPage.css';
 
 interface AuthPageProps {
@@ -12,7 +13,8 @@ interface AuthPageProps {
 const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const toast = useToast();
+  const [initialEmail, setInitialEmail] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const urlMode = searchParams.get('mode');
@@ -22,22 +24,22 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
   }, [searchParams]);
 
   const handleAuthSuccess = (userData: any) => {
+    // Called only for login success
     onSuccess(userData);
+    toast.showToast('Login berhasil', 'success');
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
+  const handleRegisterSuccess = (userData: any) => {
+    // After successful registration, show toast and switch to login with prefilled email
+    toast.showToast('Pendaftaran berhasil. Silakan masuk.', 'success');
+    setInitialEmail(userData?.email);
+    setMode('login');
   };
+
+  
 
   return (
     <div className="auth-page">
-      {/* Header */}
-      <header className="auth-header">
-        <div className="logo">
-          <h1>🏆 Courtly</h1>
-        </div>
-      </header>
-
       {/* Auth Container */}
       <div className="auth-container">
         <div className="auth-card">
@@ -58,9 +60,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
 
           {/* Form */}
           {mode === 'login' ? (
-            <LoginForm onSuccess={handleAuthSuccess} />
+            <LoginForm onSuccess={handleAuthSuccess} onSwitch={() => setMode('register')} initialEmail={initialEmail} />
           ) : (
-            <RegisterForm onSuccess={handleAuthSuccess} />
+            <RegisterForm onSuccess={handleRegisterSuccess} />
           )}
 
           {/* Switch Mode */}

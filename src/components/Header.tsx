@@ -2,14 +2,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../App.css';
-import LoginForm from './auth/LoginForm';
-import RegisterForm from './auth/RegisterForm';
+// auth handled on separate pages
 
 interface HeaderProps {
   userRole: string;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  onLogin: (userData: any) => void;
   onLogout: () => void;
   user?: any; // Tambahkan ini
 }
@@ -18,13 +16,11 @@ const Header: React.FC<HeaderProps> = ({
   userRole, 
   darkMode, 
   onToggleDarkMode,
-  onLogin,
   onLogout,
   user,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  // no modal: we'll navigate to /auth pages
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -55,21 +51,16 @@ const Header: React.FC<HeaderProps> = ({
     return baseLinks;
   };
 
-  const handleAuthSuccess = (userData: any) => {
-    onLogin(userData);
-    setShowAuthModal(false);
-    navigate('/profile');
-  };
+  // login handled via AuthPage route
 
   const handleLogout = () => {
     onLogout();
     navigate('/');
   };
 
-  const openAuthModal = (mode: 'login' | 'register') => {
-    setAuthMode(mode);
-    setShowAuthModal(true);
+  const openAuthPage = (mode: 'login' | 'register') => {
     setMobileMenuOpen(false);
+    navigate(`/auth?mode=${mode}`);
   };
 
   return (
@@ -106,21 +97,23 @@ const Header: React.FC<HeaderProps> = ({
               <div className="auth-buttons">
                 <button 
                   className="btn btn-outline"
-                  onClick={() => navigate('ogin')}
+                  onClick={() => openAuthPage('login')}
                   style={{ color: 'white', borderColor: 'white' }}
                 >
                   Masuk
                 </button>
                 <button 
                   className="btn btn-accent"
-                  onClick={() => navigate('register')}
+                  onClick={() => openAuthPage('register')}
                 >
                   Daftar
                 </button>
               </div>
             ) : (
-              <div className="user-menu">
-                <span className="user-greeting">Hai, {user?.name || 'User'}!</span>
+              <div className="auth-buttons">
+                <Link to="/profile" title={user?.name || 'Profile'} className="btn btn-outline" style={{ color: 'white', borderColor: 'white', marginRight: 8 }}>
+                  Profil
+                </Link>
                 <button 
                   className="btn btn-outline"
                   onClick={handleLogout}
@@ -142,58 +135,11 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal 
-          mode={authMode}
-          onClose={() => setShowAuthModal(false)}
-          onSwitchMode={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-          onSuccess={handleAuthSuccess}
-        />
-      )}
+      {/* auth is handled on `/auth` page now */}
     </>
   );
 };
 
-// Komponen Auth Modal
-interface AuthModalProps {
-  mode: 'login' | 'register';
-  onClose: () => void;
-  onSwitchMode: () => void;
-  onSuccess: (userData: any) => void;
-}
-
-const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onSwitchMode, onSuccess }) => {
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{mode === 'login' ? 'Masuk ke Akun' : 'Daftar Akun Baru'}</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        
-        <div className="modal-body">
-          {mode === 'login' ? (
-            <LoginForm onSuccess={onSuccess} />
-          ) : (
-            <RegisterForm onSuccess={onSuccess} />
-          )}
-          
-          <div className="auth-switch">
-            <p>
-              {mode === 'login' ? 'Belum punya akun?' : 'Sudah punya akun?'}
-              <button 
-                className="switch-mode-btn"
-                onClick={onSwitchMode}
-              >
-                {mode === 'login' ? ' Daftar di sini' : ' Masuk di sini'}
-              </button>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+// no modal component — login/register are separate pages
 
 export default Header;

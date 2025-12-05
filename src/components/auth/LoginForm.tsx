@@ -1,18 +1,26 @@
 // src/components/auth/LoginForm.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../styles/AuthForms.css';
 
 interface LoginFormProps {
   onSuccess: (userData: any) => void;
+  onSwitch?: () => void; // switch to register
+  initialEmail?: string;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitch, initialEmail }) => {
   const [formData, setFormData] = useState({
-    email: '',
+    email: initialEmail || '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (initialEmail) {
+      setFormData(prev => ({ ...prev, email: initialEmail }));
+    }
+  }, [initialEmail]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -109,14 +117,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         )}
       </button>
 
-      <div className="auth-options">
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
-          Belum punya akun?{' '}
-          <button type="button" className="forgot-password-btn" style={{ fontSize: '0.9rem' }}>
-            Daftar di sini
-          </button>
-        </p>
-      </div>
+      {/* page-level switch kept in AuthPage; no duplicate link here */}
     </form>
   );
 };

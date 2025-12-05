@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles/BookingPage.css';
 
 interface Court {
@@ -23,14 +23,18 @@ interface TimeSlot {
   courtId: string;
 }
 
-const BookingPage: React.FC = () => {
+interface BookingPageProps {
+  user?: { id: string; email: string; name: string } | null;
+}
+
+const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   const navigate = useNavigate();
-  useEffect(() => {
-    console.log('BookingPage mounted');
-  }, []);
+  const [searchParams] = useSearchParams();
+  
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedCourt, setSelectedCourt] = useState<string>('');
+  const [selectedVenueId, setSelectedVenueId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sportFilter, setSportFilter] = useState<string>('all');
   const [priceFilter, setPriceFilter] = useState<string>('all');
@@ -40,6 +44,16 @@ const BookingPage: React.FC = () => {
   const today = new Date();
   const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const [currentMonth, setCurrentMonth] = useState<string>(currentYearMonth);
+
+  // Check if venueId is provided from venue detail page
+  useEffect(() => {
+    console.log('BookingPage mounted');
+    const venueId = searchParams.get('venueId');
+    if (venueId) {
+      setSelectedVenueId(venueId);
+      setStep(2); // Skip to time selection step
+    }
+  }, [searchParams]);
 
   // Monitor selectedDate changes
   useEffect(() => {
@@ -625,6 +639,49 @@ const BookingPage: React.FC = () => {
 
   // Step 3: Konfirmasi & Pembayaran
   const renderStep3 = () => {
+    // Check if user is logged in
+    if (!user) {
+      return (
+        <div className="booking-step">
+          <div className="confirmation-header">
+            <h2>🔒 Login Diperlukan</h2>
+            <p>Silakan login terlebih dahulu untuk melanjutkan pembayaran</p>
+          </div>
+
+          <div className="login-gate">
+            <div className="login-gate-card">
+              <h3>Akses Pembayaran</h3>
+              <p>Untuk menyelesaikan pemesanan dan melakukan pembayaran, Anda harus login ke akun Anda terlebih dahulu.</p>
+              
+              <div className="login-gate-actions">
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => navigate('/auth?mode=login')}
+                >
+                  🔐 Login Sekarang
+                </button>
+                <span className="divider">atau</span>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => navigate('/auth?mode=register')}
+                >
+                  📝 Daftar Akun Baru
+                </button>
+              </div>
+
+              <button 
+                className="btn btn-outline"
+                onClick={() => setStep(2)}
+              >
+                ← Kembali ke Pemilihan Waktu
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Original payment UI if user is logged in
     const selectedCourtData = courts.find(c => c.id === selectedCourt);
     
     return (

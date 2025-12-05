@@ -230,15 +230,14 @@ const VenueDetailPage: React.FC = () => {
   }, [id]);
 
   const handleBookNow = () => {
-     // Navigate to BookingPage dengan state yang diperlukan
-    navigate('/booking', {
-      state: {
-        selectedDate: selectedDate,
-        selectedCourt: venue?.id, // Gunakan venue ID yang sedang dilihat
-        autoAdvanceToStep: 2, // Langsung ke step 2 (pilih waktu)
-        fromVenueDetail: true
-      }
-    });
+    // Navigate to BookingPage with venueId to skip to time selection step
+    if (venue?.id) {
+      navigate(`/booking?venueId=${venue.id}`, {
+        state: {
+          fromVenueDetail: true
+        }
+      });
+    }
   };
 
   const handleBack = () => {
@@ -316,7 +315,7 @@ const VenueDetailPage: React.FC = () => {
             {images.map((image, index) => (
               <button
                 key={index}
-                className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                className={`thumbnail ${selectedImage === index ? 'active'  : ''}`}
                 onClick={() => setSelectedImage(index)}
               >
                 <div className="image-placeholder medium">

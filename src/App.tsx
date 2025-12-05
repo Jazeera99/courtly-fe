@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 import VenueDetailPage from './pages/VenueDetailPage';
 import './App.css';
+import { ToastProvider } from './components/Toast';
 
 type UserRole = 'guest' | 'user' | 'vendor' | 'admin';
 
@@ -44,26 +45,28 @@ function App() {
   };
 
   return (
-    <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
-      <Header
-        userRole={user?.role || 'guest'}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-        user={user}
-      />
+    <ToastProvider>
+      <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
+        <Header
+          userRole={user?.role || 'guest'}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          user={user}
+        />
 
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/booking" element={<BookingPage />} />
-          <Route path="/profile" element={<ProfilePage user={user} />} />
-          <Route path="/auth" element={<AuthPage onSuccess={handleAuthSuccess} />} />
-          <Route path="/venue/:id" element={<VenueDetailPage />} />
-        </Routes>
-      </main>
-    </div>
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/booking" element={<BookingPage user={user} />} />
+            <Route path="/profile" element={<ProfilePage user={user} />} />
+            <Route path="/auth" element={<AuthPage onSuccess={handleAuthSuccess} />} />
+            <Route path="/venue/:id" element={<VenueDetailPage />} />
+          </Routes>
+        </main>
+      </div>
+    </ToastProvider>
   );
 }
 
