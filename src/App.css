@@ -806,3 +806,184 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Repeat Booking Styles */
+.repeat-booking-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.repeat-booking-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.repeat-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.repeat-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.repeat-option:hover {
+  border-color: #007bff;
+  background: #f8f9fa;
+}
+
+.repeat-option input[type="radio"] {
+  margin-top: 3px;
+}
+
+.repeat-details {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.repeat-select {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+/* Selected Slots Preview */
+.selected-slots-preview {
+  background: #e7f3ff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.selected-slots-preview h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #0056b3;
+}
+
+.selected-slots-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-slot-badge {
+  background: white;
+  border: 1px solid #007bff;
+  color: #007bff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.remove-slot-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.remove-slot-btn:hover {
+  background: #cc0000;
+}
+
+/* Time slots details in confirmation */
+.time-slots-details {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.slot-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.slot-detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item-full {
+  margin-top: 15px;
+}
+
+/* Selected checkmark in time slots */
+.selected-checkmark {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #28a745;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Navbar adjustments for new booking menu */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+  .repeat-option {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .repeat-details {
+    margin-left: 24px;
+    margin-top: 5px;
+  }
+  
+  .selected-slots-list {
+    justify-content: center;
+  }
+  
+  .booking-actions {
+    flex-direction: column;
+  }
+  
+  .btn-action {
+    width: 100%;
+    justify-content: center;
+  }
+}

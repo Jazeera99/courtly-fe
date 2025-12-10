@@ -9,7 +9,7 @@ interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onLogout: () => void;
-  user?: any; // Tambahkan ini
+  user?: any;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -32,18 +32,21 @@ const Header: React.FC<HeaderProps> = ({
 
     if (userRole === 'user') {
       return [...baseLinks, 
+        { path: '/my-bookings', label: 'Booking Saya', icon: '📋' },
         { path: '/profile', label: 'Profil', icon: '👤' }
       ];
     }
 
     if (userRole === 'vendor') {
       return [...baseLinks,
+        { path: '/vendor/bookings', label: 'Booking', icon: '📋' }, 
         { path: '/vendor', label: 'Dashboard', icon: '🏪' }
       ];
     }
 
     if (userRole === 'admin') {
       return [...baseLinks,
+        { path: '/admin/bookings', label: 'Booking', icon: '📋' },
         { path: '/admin', label: 'Admin', icon: '⚙️' }
       ];
     }
@@ -55,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = () => {
     onLogout();
-    navigate('/');
+    navigate('/auth?mode=login');
   };
 
   const openAuthPage = (mode: 'login' | 'register') => {
@@ -84,6 +87,31 @@ const Header: React.FC<HeaderProps> = ({
                 {link.label}
               </Link>
             ))}
+
+            {userRole === 'admin' && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/admin/dashboard');
+                }}
+                className="nav-link"
+              >
+                🛠️ Admin Panel
+              </button>
+            )}
+
+            {/* 🔥 Tambahan untuk Vendor */}
+            {userRole === 'vendor' && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/partner/dashboard');
+                }}
+                className="nav-link"
+              >
+                🤝 Partner Area
+              </button>
+            )}
             
             <button 
               className="nav-link"

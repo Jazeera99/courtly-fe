@@ -255,17 +255,6 @@ const VenueDetailPage: React.FC = () => {
     }
   };
 
-  const handleCheckAvailability = () => {
-    // Navigate to BookingPage untuk cek availability
-    navigate('/booking', {
-      state: {
-        selectedDate: selectedDate,
-        selectedCourt: venue?.id,
-        fromVenueDetail: true
-      }
-    });
-  };
-
   if (loading) {
     return (
       <div className="venue-detail-page loading">

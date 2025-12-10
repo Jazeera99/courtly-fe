@@ -1,6 +1,6 @@
 // src/pages/AuthPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
 import { useToast } from '../components/Toast';
@@ -13,8 +13,13 @@ interface AuthPageProps {
 const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const [initialEmail, setInitialEmail] = useState<string | undefined>(undefined);
+ 
+  // Get redirect path from location state
+  const redirectPath = (location.state as any)?.redirectPath || '/';
 
   useEffect(() => {
     const urlMode = searchParams.get('mode');
@@ -24,35 +29,56 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
   }, [searchParams]);
 
   const handleAuthSuccess = (userData: any) => {
-    // Called only for login success
     onSuccess(userData);
     toast.showToast('Login berhasil', 'success');
+    
+    // Cek apakah ada pending booking
+    const pendingBooking = sessionStorage.getItem('pendingBooking');
+
+    // Redirect berdasarkan role
+    setTimeout(() => {
+      if (pendingBooking) {
+        // Parse dan redirect ke booking page dengan data yang disimpan
+        const bookingData = JSON.parse(pendingBooking);
+        
+        // Redirect ke booking page dengan state
+        navigate('/booking', { 
+          state: { 
+            restoreBooking: true,
+            bookingData: bookingData
+          }
+        });
+        
+        // Hapus dari sessionStorage
+        sessionStorage.removeItem('pendingBooking');
+      } else if (userData.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (userData.role === 'vendor') {
+        navigate('/partner/dashboard');
+      } else {
+        navigate(redirectPath || '/');
+      }
+    }, 500);
   };
 
   const handleRegisterSuccess = (userData: any) => {
-    // After successful registration, show toast and switch to login with prefilled email
     toast.showToast('Pendaftaran berhasil. Silakan masuk.', 'success');
     setInitialEmail(userData?.email);
     setMode('login');
   };
 
-  
-
   return (
     <div className="auth-page">
-      {/* Auth Container */}
       <div className="auth-container">
         <div className="auth-card">
-          {/* Tabs */}
-
           {/* Welcome Message */}
           <div className="auth-welcome">
             <h2>
-              {mode === 'login' ? 'Selamat Datang Kembali!' : 'Bergabung dengan Courtly'}
+              {mode === 'login' ? 'Selamat Datang!' : 'Bergabung dengan Courtly'}
             </h2>
             <p>
               {mode === 'login' 
-                ? 'Masuk ke akun Anda untuk mulai booking lapangan' 
+                ? 'Masuk ke akun Anda untuk melanjutkan' 
                 : 'Daftar sekarang untuk pengalaman booking yang lebih baik'
               }
             </p>
@@ -60,9 +86,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
 
           {/* Form */}
           {mode === 'login' ? (
-            <LoginForm onSuccess={handleAuthSuccess} onSwitch={() => setMode('register')} initialEmail={initialEmail} />
+              <LoginForm 
+                onSuccess={handleAuthSuccess} 
+                initialEmail={initialEmail}
+              />
           ) : (
-            <RegisterForm onSuccess={handleRegisterSuccess} />
+            <RegisterForm 
+              onSuccess={handleRegisterSuccess} 
+            />
           )}
 
           {/* Switch Mode */}

@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
+import '../styles/ProfilePage.css';
 
-const ProfilePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'bookings' | 'reviews'>('profile');
-  const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+6281234567890',
-    address: 'Sidoarjo, Jawa Timur'
-  });
+interface ProfilePageProps {
+  user?: any;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
+  const [activeTab, setActiveTab] = useState<'profile' | 'bookings' | 'reviews' | 'membership'>('profile');
+  const [userData, setUserData] = useState(() => ({
+    name: user?.name ?? 'John Doe',
+    email: user?.email ?? 'john.doe@example.com',
+    phone: user?.phone ?? '+6281234567890',
+    address: 'Sidoarjo, Jawa Timur',
+    membership: 'regular' // 'regular', 'premium', 'none'
+  }));
 
   const bookings = [
     {
@@ -77,6 +83,38 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 
+   const [showMembershipModal, setShowMembershipModal] = useState(false);
+  const [selectedMembership, setSelectedMembership] = useState('premium');
+
+  const membershipPlans = [
+    {
+      id: 'premium',
+      name: 'Premium Membership',
+      price: 150000,
+      duration: 'per bulan',
+      benefits: [
+        'Diskon 20% untuk semua booking',
+        'Prioritas booking',
+        'Free cancellation',
+        'Akses ke lapangan eksklusif',
+        'Welcome drink setiap booking'
+      ]
+    },
+    {
+      id: 'gold',
+      name: 'Gold Membership',
+      price: 300000,
+      duration: 'per 3 bulan',
+      benefits: [
+        'Diskon 25% untuk semua booking',
+        'Prioritas booking maksimal',
+        'Free cancellation 24 jam',
+        'Akses semua lapangan premium',
+        'Free merchandise'
+      ]
+    }
+  ];
+
   const renderBookings = () => (
     <div className="card">
       <h2 style={{ marginBottom: '24px' }}>Riwayat Booking</h2>
@@ -128,6 +166,87 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 
+  const renderMembership = () => (
+    <div className="card membership-section">
+      <h2 style={{ marginBottom: '24px' }}>Keanggotaan</h2>
+      
+      {userData.membership === 'none' ? (
+        <div className="no-membership">
+          <div className="membership-icon">👑</div>
+          <h3>Belum Terdaftar Membership</h3>
+          <p>Daftar sekarang untuk mendapatkan diskon dan manfaat eksklusif!</p>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowMembershipModal(true)}
+          >
+            Daftar Membership
+          </button>
+        </div>
+      ) : (
+        <div className="active-membership">
+          <div className="membership-card">
+            <div className="membership-header">
+              <h3>{userData.membership === 'premium' ? 'Premium Membership' : 'Gold Membership'}</h3>
+              <span className="membership-status active">Aktif</span>
+            </div>
+            <div className="membership-benefits">
+              <h4>Manfaat Anda:</h4>
+              <ul>
+                <li>✓ Diskon 20% untuk semua booking</li>
+                <li>✓ Prioritas booking</li>
+                <li>✓ Free cancellation</li>
+                <li>✓ Akses eksklusif</li>
+              </ul>
+            </div>
+            <div className="membership-actions">
+              <button className="btn btn-outline">Perpanjang</button>
+              <button className="btn btn-outline">Upgrade</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Membership Modal */}
+      {showMembershipModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Pilih Membership</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowMembershipModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="membership-options">
+              {membershipPlans.map(plan => (
+                <div 
+                  key={plan.id}
+                  className={`membership-option ${selectedMembership === plan.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedMembership(plan.id)}
+                >
+                  <h4>{plan.name}</h4>
+                  <div className="price">Rp {plan.price.toLocaleString()}</div>
+                  <div className="duration">{plan.duration}</div>
+                  
+                  <ul className="benefits-list">
+                    {plan.benefits.map((benefit, idx) => (
+                      <li key={idx}>✓ {benefit}</li>
+                    ))}
+                  </ul>
+                  
+                  <button className="btn btn-primary">Pilih</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="profile-page">
       <div className="card">
@@ -158,7 +277,8 @@ const ProfilePage: React.FC = () => {
           {[
             { id: 'profile', label: 'Profil' },
             { id: 'bookings', label: 'Booking' },
-            { id: 'reviews', label: 'Ulasan' }
+            { id: 'reviews', label: 'Ulasan' },
+            { id: 'membership', label: 'Membership' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -175,6 +295,7 @@ const ProfilePage: React.FC = () => {
       {activeTab === 'profile' && renderProfile()}
       {activeTab === 'bookings' && renderBookings()}
       {activeTab === 'reviews' && renderReviews()}
+      {activeTab === 'membership' && renderMembership()}
     </div>
   );
 };

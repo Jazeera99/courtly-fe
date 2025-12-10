@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import '../styles/BookingPage.css';
 
 interface Court {
@@ -23,18 +23,41 @@ interface TimeSlot {
   courtId: string;
 }
 
+interface BookingItem {
+  id: string;
+  courtId: string;
+  date: string;
+  time: string;
+  duration: number;
+  price: number;
+  courtName: string;
+  venue: string;
+  location: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  paymentStatus: 'pending' | 'paid' | 'refunded';
+  paymentMethod: string;
+  invoiceNumber: string;
+  createdAt: string;
+  canCancelUntil: string;
+}
+
 interface BookingPageProps {
   user?: { id: string; email: string; name: string } | null;
 }
 
 const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedCourt, setSelectedCourt] = useState<string>('');
-  const [selectedVenueId, setSelectedVenueId] = useState<string>('');
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<Array<{date: string, time: string}>>([]);
+  const [bookingRepeat, setBookingRepeat] = useState<'none' | 'weekly' | 'monthly'>('none');
+  const [repeatWeeks, setRepeatWeeks] = useState<number>(1);
+  const [repeatMonths, setRepeatMonths] = useState<number>(1);
+  
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sportFilter, setSportFilter] = useState<string>('all');
   const [priceFilter, setPriceFilter] = useState<string>('all');
@@ -50,7 +73,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     console.log('BookingPage mounted');
     const venueId = searchParams.get('venueId');
     if (venueId) {
-      setSelectedVenueId(venueId);
+      // If the incoming venueId corresponds to a court id, auto-select it
+      setSelectedCourt(venueId);
       setStep(2); // Skip to time selection step
     }
   }, [searchParams]);
@@ -285,8 +309,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   slotDateTime.setHours(hours, 0, 0, 0);
   
   return slotDateTime < now;
-};
-
+  };
 
   // Mock data untuk jadwal yang sudah dibooking (lebih realistis)
   const generateBookedSlots = (): TimeSlot[] => {
@@ -331,10 +354,167 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     return !booked;
   };
 
+  // Fungsi untuk menambah/menghapus slot waktu yang dipilih
+  const toggleTimeSlot = (time: string) => {
+    if (!selectedDate) return;
+    
+    const existingIndex = selectedTimeSlots.findIndex(
+      slot => slot.date === selectedDate && slot.time === time
+    );
+    
+    if (existingIndex >= 0) {
+      // Remove if already selected
+      const newSlots = [...selectedTimeSlots];
+      newSlots.splice(existingIndex, 1);
+      setSelectedTimeSlots(newSlots);
+    } else {
+      // Add new slot
+      setSelectedTimeSlots([...selectedTimeSlots, { date: selectedDate, time }]);
+    }
+  };
+
+  // Fungsi untuk pilih banyak waktu sekaligus
+  const selectMultipleTimeSlots = (startTime: string, endTime: string) => {
+    if (!selectedDate) return;
+    
+    const startHour = parseInt(startTime.split(':')[0]);
+    const endHour = parseInt(endTime.split(':')[0]);
+    
+    const newSlots = [...selectedTimeSlots];
+    
+    for (let hour = startHour; hour < endHour; hour++) {
+      const time = `${hour.toString().padStart(2, '0')}:00`;
+      
+      // Cek apakah slot sudah dipilih
+      const alreadySelected = newSlots.some(
+        slot => slot.date === selectedDate && slot.time === time
+      );
+      
+      // Cek apakah slot tersedia
+      const isAvailable = isTimeSlotAvailable(selectedCourt, time);
+      const isPast = isTimeInPast(selectedDate, time);
+      
+      if (!alreadySelected && isAvailable && !isPast) {
+        newSlots.push({ date: selectedDate, time });
+      }
+    }
+    
+    setSelectedTimeSlots(newSlots);
+  };
+
+  // Fungsi untuk generate repeat bookings (mingguan/bulanan)
+  const generateRepeatBookings = () => {
+    if (!selectedDate || selectedTimeSlots.length === 0 || bookingRepeat === 'none') {
+      return selectedTimeSlots;
+    }
+    
+    const allSlots: Array<{date: string, time: string}> = [...selectedTimeSlots];
+    const baseDate = new Date(selectedDate);
+    
+    if (bookingRepeat === 'weekly') {
+      for (let week = 1; week <= repeatWeeks; week++) {
+        const weekDate = new Date(baseDate);
+        weekDate.setDate(weekDate.getDate() + (week * 7));
+        const dateStr = weekDate.toISOString().split('T')[0];
+        
+        selectedTimeSlots.forEach(slot => {
+          allSlots.push({ date: dateStr, time: slot.time });
+        });
+      }
+    } else if (bookingRepeat === 'monthly') {
+      for (let month = 1; month <= repeatMonths; month++) {
+        const monthDate = new Date(baseDate);
+        monthDate.setMonth(monthDate.getMonth() + month);
+        const dateStr = monthDate.toISOString().split('T')[0];
+        
+        selectedTimeSlots.forEach(slot => {
+          allSlots.push({ date: dateStr, time: slot.time });
+        });
+      }
+    }
+    
+    return allSlots;
+  };
+
+  // Hitung total harga
+  const calculateTotalPrice = () => {
+    const selectedCourtData = courts.find(c => c.id === selectedCourt);
+    if (!selectedCourtData) return 0;
+    
+    const allBookings = generateRepeatBookings();
+    return allBookings.length * selectedCourtData.price;
+  };
+
+  useEffect(() => {
+    // Check for pending booking from location state
+    if (location.state?.restoreBooking && location.state?.bookingData) {
+      const bookingData = location.state.bookingData;
+      
+      // Restore semua data booking
+      if (bookingData.selectedDate) {
+        setSelectedDate(bookingData.selectedDate);
+      }
+      if (bookingData.selectedCourt) {
+        setSelectedCourt(bookingData.selectedCourt);
+      }
+      if (bookingData.selectedTimeSlots) {
+        setSelectedTimeSlots(bookingData.selectedTimeSlots);
+      }
+      if (bookingData.step) {
+        setStep(bookingData.step);
+      }
+    }
+
+    // Check for pending booking from sessionStorage (fallback)
+    const pendingBooking = sessionStorage.getItem('pendingBooking');
+    if (pendingBooking && user) {
+      const bookingData = JSON.parse(pendingBooking);
+      
+      // Restore booking data
+      if (bookingData.selectedDate) {
+        setSelectedDate(bookingData.selectedDate);
+      }
+      if (bookingData.selectedCourt) {
+        setSelectedCourt(bookingData.selectedCourt);
+      }
+      if (bookingData.selectedTimeSlots) {
+        setSelectedTimeSlots(bookingData.selectedTimeSlots);
+      }
+      if (bookingData.step) {
+        setStep(bookingData.step);
+      }
+      
+      // Clear pending booking
+      sessionStorage.removeItem('pendingBooking');
+    }
+  }, [location.state, user]);
+
+  useEffect(() => {
+  // Check for pending booking data after login
+  const pendingBooking = localStorage.getItem('pendingBooking');
+  if (pendingBooking) {
+    const bookingData = JSON.parse(pendingBooking);
+    
+    // Restore booking data
+    if (bookingData.selectedDate) {
+      setSelectedDate(bookingData.selectedDate);
+    }
+    if (bookingData.selectedCourt) {
+      setSelectedCourt(bookingData.selectedCourt);
+    }
+    if (bookingData.selectedTimeSlots) {
+      setSelectedTimeSlots(bookingData.selectedTimeSlots);
+      setStep(3); // Langsung ke step pembayaran
+    }
+    
+    // Clear pending booking
+    localStorage.removeItem('pendingBooking');
+  }
+}, []);
+
   // Reset selection ketika date berubah
   useEffect(() => {
-    setSelectedTime('');
-    setSelectedCourt('');
+    setSelectedTimeSlots([]);
   }, [selectedDate]);
 
   // Step 1: Pilih Tanggal & Cari Lapangan
@@ -556,14 +736,83 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     </div>
   );
 
-  // Step 2: Pilih Waktu
-    const renderStep2 = () => {
+  // Step 2: Pilih Waktu dengan Multi Selection
+  const renderStep2 = () => {
     const selectedCourtData = courts.find(c => c.id === selectedCourt);
+    const allBookings = generateRepeatBookings();
     
     return (
       <div className="booking-step">
         <div className="time-selection-header">
           <h2 className="time-selection-title">🕐 Pilih Waktu Booking</h2>
+          
+          {/* Tampilkan pilihan berulang */}
+          <div className="repeat-booking-section">
+            <h3>🔄 Pemesanan Berulang</h3>
+            <div className="repeat-options">
+              <label className="repeat-option">
+                <input
+                  type="radio"
+                  name="repeat"
+                  value="none"
+                  checked={bookingRepeat === 'none'}
+                  onChange={(e) => setBookingRepeat(e.target.value as any)}
+                />
+                <span>Tidak berulang (sekali pesan)</span>
+              </label>
+              
+              <label className="repeat-option">
+                <input
+                  type="radio"
+                  name="repeat"
+                  value="weekly"
+                  checked={bookingRepeat === 'weekly'}
+                  onChange={(e) => setBookingRepeat(e.target.value as any)}
+                />
+                <span>Setiap minggu (mingguan)</span>
+                {bookingRepeat === 'weekly' && (
+                  <div className="repeat-details">
+                    <span>Selama:</span>
+                    <select 
+                      value={repeatWeeks}
+                      onChange={(e) => setRepeatWeeks(Number(e.target.value))}
+                      className="repeat-select"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                        <option key={num} value={num}>{num} minggu</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </label>
+              
+              <label className="repeat-option">
+                <input
+                  type="radio"
+                  name="repeat"
+                  value="monthly"
+                  checked={bookingRepeat === 'monthly'}
+                  onChange={(e) => setBookingRepeat(e.target.value as any)}
+                />
+                <span>Setiap bulan (bulanan)</span>
+                {bookingRepeat === 'monthly' && (
+                  <div className="repeat-details">
+                    <span>Selama:</span>
+                    <select 
+                      value={repeatMonths}
+                      onChange={(e) => setRepeatMonths(Number(e.target.value))}
+                      className="repeat-select"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(num => (
+                        <option key={num} value={num}>{num} bulan</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
+          
           <div className="booking-summary-large">
             <div className="summary-item-large">
               <span className="summary-label">Lapangan:</span>
@@ -581,18 +830,81 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
               </span>
             </div>
             <div className="summary-item-large">
-              <span className="summary-label">Harga:</span>
-              <span className="summary-value price">Rp {selectedCourtData?.price.toLocaleString()}/jam</span>
+              <span className="summary-label">Harga per jam:</span>
+              <span className="summary-value price">Rp {selectedCourtData?.price.toLocaleString()}</span>
+            </div>
+            <div className="summary-item-large">
+              <span className="summary-label">Slot dipilih:</span>
+              <span className="summary-value">{selectedTimeSlots.length} slot</span>
             </div>
           </div>
+          
+          {/* Tombol untuk pilih rentang waktu */}
+          <div className="time-range-selection">
+            <h4>⏳ Pilih Rentang Waktu (Opsional)</h4>
+            <div className="range-selection-buttons">
+              <button 
+                className="range-btn"
+                onClick={() => selectMultipleTimeSlots('10:00', '12:00')}
+              >
+                10:00 - 12:00 (2 jam)
+              </button>
+              <button 
+                className="range-btn"
+                onClick={() => selectMultipleTimeSlots('14:00', '17:00')}
+              >
+                14:00 - 17:00 (3 jam)
+              </button>
+              <button 
+                className="range-btn"
+                onClick={() => selectMultipleTimeSlots('18:00', '21:00')}
+              >
+                18:00 - 21:00 (3 jam)
+              </button>
+              <button 
+                className="range-btn"
+                onClick={() => setSelectedTimeSlots([])}
+              >
+                🔄 Reset Semua Pilihan
+              </button>
+            </div>
+          </div>
+          
+          {/* Tampilkan slot yang sudah dipilih */}
+          {selectedTimeSlots.length > 0 && (
+            <div className="selected-slots-preview">
+              <h4>✅ Slot Waktu Dipilih ({selectedTimeSlots.length} slot):</h4>
+              <div className="selected-slots-list">
+                {selectedTimeSlots.map((slot, index) => (
+                  <div key={index} className="selected-slot-badge">
+                    {slot.time}:00 - {parseInt(slot.time) + 1}:00
+                    <button 
+                      className="remove-slot-btn"
+                      onClick={() => {
+                        const newSlots = [...selectedTimeSlots];
+                        newSlots.splice(index, 1);
+                        setSelectedTimeSlots(newSlots);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="time-slots-section">
-          <h3 className="time-slots-title">⏰ Slot Waktu Tersedia</h3>
+          <h3 className="time-slots-title">⏰ Slot Waktu Tersedia (Klik untuk pilih lebih dari satu)</h3>
+          <p className="time-slots-subtitle">Tips: Klik tombol rentang waktu di atas untuk memilih beberapa jam sekaligus</p>
+          
           <div className="time-slots-grid-ordered">
             {timeSlots.map(time => {
               const isAvailable = isTimeSlotAvailable(selectedCourt, time);
-              const isSelected = selectedTime === time;
+              const isSelected = selectedTimeSlots.some(slot => 
+                slot.date === selectedDate && slot.time === time
+              );
               const isPast = isTimeInPast(selectedDate, time);
               
               return (
@@ -600,7 +912,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                   key={time}
                   className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${
                     !isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
-                  onClick={() => isAvailable && !isPast && setSelectedTime(time)}
+                  onClick={() => isAvailable && !isPast && toggleTimeSlot(time)}
                   disabled={!isAvailable || isPast}
                 >
                   <div className="time-range-large">{time} - {parseInt(time) + 1}:00</div>
@@ -611,6 +923,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                     <div className="time-price-large">
                       Rp {selectedCourtData?.price.toLocaleString()}
                     </div>
+                  )}
+                  {isSelected && (
+                    <div className="selected-checkmark">✓</div>
                   )}
                 </button>
               );
@@ -627,14 +942,83 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
           </button>
           <button 
             className="btn btn-primary"
-            disabled={!selectedTime}
+            disabled={selectedTimeSlots.length === 0}
             onClick={() => setStep(3)}
           >
-            💳 Lanjut ke Pembayaran →
+            💳 Lanjut ke Pembayaran ({selectedTimeSlots.length} slot) →
           </button>
         </div>
       </div>
     );
+  };
+
+  // === Handler Pembayaran ===
+  const handlePayment = () => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+    if (!user) {
+      const bookingData = {
+        selectedDate,
+        selectedTimeSlots,
+        selectedCourt,
+        selectedCourtData: courts.find(c => c.id === selectedCourt),
+        bookingRepeat,
+        repeatWeeks,
+        repeatMonths,
+        step: 3, // Simpan step terakhir
+        timestamp: new Date().toISOString()
+      };
+
+      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+
+      // Redirect ke halaman login dengan state
+      navigate('/auth', { 
+        state: { 
+          redirectPath: '/booking',
+          message: 'Silakan login untuk melanjutkan pembayaran'
+        }
+      });
+      return;
+    }
+
+    // Jika user sudah login, lanjut ke pembayaran
+    const allBookings = generateRepeatBookings();
+    const selectedCourtData = courts.find(c => c.id === selectedCourt);
+    
+    // Generate invoice number
+    const invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    // Calculate cancellation deadline (15 minutes from now)
+    const cancelDeadline = new Date();
+    cancelDeadline.setMinutes(cancelDeadline.getMinutes() + 15);
+    
+    // Create booking records
+    const bookingRecords: BookingItem[] = allBookings.map((slot, index) => ({
+      id: `booking-${Date.now()}-${index}`,
+      courtId: selectedCourt,
+      date: slot.date,
+      time: slot.time,
+      duration: 1,
+      price: selectedCourtData?.price || 0,
+      courtName: selectedCourtData?.name || '',
+      venue: selectedCourtData?.venue || '',
+      location: selectedCourtData?.location || '',
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      paymentMethod: 'bca',
+      invoiceNumber: index === 0 ? invoiceNumber : `${invoiceNumber}-${index + 1}`,
+      createdAt: new Date().toISOString(),
+      canCancelUntil: cancelDeadline.toISOString()
+    }));
+    
+    // Save to localStorage (simulate database)
+    const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+    const updatedBookings = [...existingBookings, ...bookingRecords];
+    localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
+    
+    // Navigate to bookings page
+    alert(`Pembayaran berhasil! ${allBookings.length} booking telah dibuat.`);
+    navigate('/my-bookings');
   };
 
   // Step 3: Konfirmasi & Pembayaran
@@ -651,7 +1035,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
           <div className="login-gate">
             <div className="login-gate-card">
               <h3>Akses Pembayaran</h3>
-              <p>Untuk menyelesaikan pemesanan dan melakukan pembayaran, Anda harus login ke akun Anda terlebih dahulu.</p>
+              <p>Untuk menyelesaikan pemesanan dan melakukan pembayaran, Anda harus register / login ke akun Anda terlebih dahulu.</p>
               
               <div className="login-gate-actions">
                 <button 
@@ -683,6 +1067,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
 
     // Original payment UI if user is logged in
     const selectedCourtData = courts.find(c => c.id === selectedCourt);
+    const allBookings = generateRepeatBookings();
+    const totalPrice = calculateTotalPrice();
     
     return (
       <div className="booking-step">
@@ -708,25 +1094,39 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                 <span>{selectedCourtData?.location}</span>
               </div>
               <div className="detail-item">
-                <span>Tanggal:</span>
-                <span>{new Date(selectedDate).toLocaleDateString('id-ID', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</span>
-              </div>
-              <div className="detail-item">
-                <span>Waktu:</span>
-                <span>{selectedTime}:00 - {parseInt(selectedTime) + 1}:00</span>
-              </div>
-              <div className="detail-item">
-                <span>Durasi:</span>
-                <span>1 Jam</span>
-              </div>
-              <div className="detail-item">
                 <span>Jenis Lapangan:</span>
                 <span>{selectedCourtData?.type}</span>
+              </div>
+              <div className="detail-item">
+                <span>Pemesanan Berulang:</span>
+                <span>
+                  {bookingRepeat === 'none' ? 'Tidak berulang' : 
+                   bookingRepeat === 'weekly' ? `Mingguan (${repeatWeeks} minggu)` : 
+                   `Bulanan (${repeatMonths} bulan)`}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span>Total Slot Waktu:</span>
+                <strong>{allBookings.length} slot</strong>
+              </div>
+              
+              {/* List semua slot waktu */}
+              <div className="detail-item-full">
+                <span>Detail Slot Waktu:</span>
+                <div className="time-slots-details">
+                  {allBookings.map((slot, index) => (
+                    <div key={index} className="slot-detail-item">
+                      <span>Slot {index + 1}:</span>
+                      <span>
+                        {new Date(slot.date).toLocaleDateString('id-ID', { 
+                          weekday: 'short', 
+                          day: 'numeric',
+                          month: 'short'
+                        })} • {slot.time}:00 - {parseInt(slot.time) + 1}:00
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -740,14 +1140,23 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                   <span>Rp {selectedCourtData?.price.toLocaleString()}</span>
                 </div>
                 <div className="summary-item">
-                  <span>Durasi:</span>
-                  <span>1 Jam</span>
+                  <span>Jumlah Slot:</span>
+                  <span>{allBookings.length} slot @ 1 jam</span>
                 </div>
+                {bookingRepeat !== 'none' && (
+                  <div className="summary-item">
+                    <span>Pemesanan Berulang:</span>
+                    <span>
+                      {bookingRepeat === 'weekly' ? `${repeatWeeks} minggu` : 
+                       bookingRepeat === 'monthly' ? `${repeatMonths} bulan` : ''}
+                    </span>
+                  </div>
+                )}
                 <hr />
                 <div className="summary-total">
                   <span>Total Pembayaran:</span>
                   <span className="total-amount">
-                    Rp {selectedCourtData?.price.toLocaleString()}
+                    Rp {totalPrice.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -800,8 +1209,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
           <button 
             className="btn btn-primary"
             style={{ padding: '12px 32px', fontSize: '1.1rem' }}
+            onClick={handlePayment}
           >
-            🎯 Konfirmasi & Bayar
+            🎯 Konfirmasi & Bayar (Rp {totalPrice.toLocaleString()})
           </button>
         </div>
       </div>
@@ -814,23 +1224,26 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
       <div style={{ background: '#ffefc2', padding: '10px', borderRadius: 8, marginBottom: 12, color: '#333', textAlign: 'center' }}>
         DEBUG: BookingPage component mounted
       </div>
-      {/* Progress Steps */}
+      
+      {/* Progress Steps - CENTERED */}
       <div className="booking-header">
-        <h1>🏀 Booking Lapangan</h1>
-        <div className="progress-steps">
-          <div className="steps-container">
-            {[1, 2, 3].map(num => (
-              <div key={num} className="step-item">
-                <div className={`step-number ${step >= num ? 'active' : ''}`}>
-                  {num}
+        <div className="booking-title-section">
+          <h1 className="booking-main-title">🏀 Booking Lapangan</h1>
+          <div className="progress-steps-centered">
+            <div className="steps-container-centered">
+              {[1, 2, 3].map(num => (
+                <div key={num} className="step-item-centered">
+                  <div className={`step-number-centered ${step >= num ? 'active' : ''}`}>
+                    {num}
+                  </div>
+                  <div className="step-label-centered">
+                    {num === 1 && 'Pilih Lapangan'}
+                    {num === 2 && 'Pilih Waktu'}
+                    {num === 3 && 'Pembayaran'}
+                  </div>
                 </div>
-                <div className="step-label">
-                  {num === 1 && 'Pilih Lapangan'}
-                  {num === 2 && 'Pilih Waktu'}
-                  {num === 3 && 'Pembayaran'}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

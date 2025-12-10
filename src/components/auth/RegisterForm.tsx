@@ -4,9 +4,10 @@ import '../../styles/AuthForms.css';
 
 interface RegisterFormProps {
   onSuccess: (userData: any) => void;
+  loginType?: 'user' | 'admin' | 'partner';
 }
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'user' }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -17,6 +18,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Jika bukan user biasa, redirect ke login
+  if (loginType !== 'user') {
+    return (
+      <div className="register-restricted">
+        <div className="restricted-message">
+          <h3>⛔ Pendaftaran Dibatasi</h3>
+          <p>
+            Pendaftaran akun {loginType === 'admin' ? 'admin' : 'mitra lapangan'} tidak tersedia untuk publik.
+            Silakan hubungi administrator sistem untuk mendapatkan akses.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -57,9 +73,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock success response
       const userData = {
-        id: '1',
+        id: 'new-user-' + Date.now(),
         name: formData.fullName,
         email: formData.email,
         phone: formData.phone,

@@ -1681,3 +1681,477 @@
 .login-gate-card .btn-outline:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* =================== */
+/* CENTERED PROGRESS STEPS */
+/* =================== */
+.booking-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px 0;
+}
+
+.booking-title-section {
+  width: 100%;
+}
+
+.booking-main-title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.progress-steps-centered {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 800px;
+}
+
+.steps-container-centered {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  position: relative;
+}
+
+.steps-container-centered::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 4px;
+  background: #e0e0e0;
+  z-index: 1;
+}
+
+.step-item-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.step-number-centered {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  border: 3px solid #e0e0e0;
+}
+
+.step-number-centered.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.step-label-centered {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: center;
+  font-weight: 500;
+  max-width: 100px;
+}
+
+/* =================== */
+/* TIME RANGE SELECTION */
+/* =================== */
+.time-range-selection {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.time-range-selection h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
+}
+
+.range-selection-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.range-btn {
+  padding: 12px 20px;
+  background: white;
+  border: 2px solid #007bff;
+  color: #007bff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  min-width: 180px;
+}
+
+.range-btn:hover {
+  background: #007bff;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.range-btn:active {
+  transform: translateY(0);
+}
+
+/* =================== */
+/* TIME SLOTS IMPROVEMENTS */
+/* =================== */
+.time-slots-section {
+  margin-top: 30px;
+}
+
+.time-slots-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.time-slots-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.time-slots-grid-ordered {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.time-slot-btn-large {
+  position: relative;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.time-slot-btn-large:hover:not(:disabled) {
+  border-color: #007bff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+}
+
+.time-slot-btn-large.selected {
+  border-color: #28a745;
+  background: #f0fff4;
+}
+
+.time-slot-btn-large.selected:hover:not(:disabled) {
+  border-color: #218838;
+}
+
+.time-slot-btn-large.booked {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.time-slot-btn-large.past-time {
+  background: #f8f9fa;
+  border-color: #ffc107;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.time-range-large {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.time-status-large {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.time-price-large {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #28a745;
+  margin-top: 5px;
+}
+
+.selected-checkmark {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #28a745;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* =================== */
+/* SELECTED SLOTS PREVIEW */
+/* =================== */
+.selected-slots-preview {
+  background: #e7f3ff;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+  border: 2px solid #007bff;
+}
+
+.selected-slots-preview h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #0056b3;
+  text-align: center;
+}
+
+.selected-slots-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.selected-slot-badge {
+  background: white;
+  border: 2px solid #007bff;
+  color: #007bff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.selected-slot-badge:hover {
+  background: #007bff;
+  color: white;
+}
+
+.remove-slot-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.remove-slot-btn:hover {
+  background: #cc0000;
+  transform: scale(1.1);
+}
+
+/* =================== */
+/* REPEAT BOOKING SECTION */
+/* =================== */
+.repeat-booking-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.repeat-booking-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
+}
+
+.repeat-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.repeat-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.repeat-option:hover {
+  border-color: #007bff;
+  background: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.repeat-option input[type="radio"] {
+  margin-top: 3px;
+  accent-color: #007bff;
+}
+
+.repeat-details {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.repeat-select {
+  padding: 8px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.9rem;
+}
+
+.repeat-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+/* =================== */
+/* BOOKING SUMMARY LARGE */
+/* =================== */
+.booking-summary-large {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.summary-item-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.summary-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.summary-value.price {
+  color: #28a745;
+}
+
+/* =================== */
+/* RESPONSIVE DESIGN */
+/* =================== */
+@media (max-width: 768px) {
+  .booking-main-title {
+    font-size: 2rem;
+  }
+  
+  .steps-container-centered {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .steps-container-centered::before {
+    display: none;
+  }
+  
+  .step-item-centered {
+    flex-direction: row;
+    gap: 15px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .step-number-centered {
+    margin-bottom: 0;
+  }
+  
+  .step-label-centered {
+    text-align: left;
+  }
+  
+  .range-selection-buttons {
+    flex-direction: column;
+  }
+  
+  .range-btn {
+    width: 100%;
+  }
+  
+  .time-slots-grid-ordered {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .booking-summary-large {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .time-slots-grid-ordered {
+    grid-template-columns: 1fr;
+  }
+  
+  .booking-summary-large {
+    grid-template-columns: 1fr;
+  }
+  
+  .selected-slots-list {
+    justify-content: flex-start;
+  }
+}
