@@ -1,46 +1,46 @@
 // src/components/mitra/VenueInfoCard.tsx
 import React from 'react';
+import '../../styles/PartnerDashboard.css';
 
 const VenueInfoCard: React.FC = () => {
-  const venueInfo = {
-    name: 'GOR Sidoarjo Sport Center',
-    address: 'Jl. Pahlawan No. 45, Sidoarjo',
-    phone: '(031) 8901234',
-    operatingHours: '07:00 - 22:00',
-    facilities: ['Futsal', 'Badminton', 'Parkir Luas', 'AC', 'Kantin']
-  };
-
   return (
     <div className="venue-info-card">
-      <div className="venue-header">
-        <h2>{venueInfo.name}</h2>
-        <div className="venue-status">
-          <span className="status-indicator active"></span>
-          <span>Venue Aktif</span>
-        </div>
+      <div className="venue-info-header">
+        <h2>GOR Sidonjo Sport Center</h2>
+        <span className="venue-status">● Buka</span>
       </div>
       
       <div className="venue-details">
-        <div className="detail-row">
-          <span className="detail-icon">📍</span>
-          <span>{venueInfo.address}</span>
+        <div className="detail-item">
+          <div className="detail-icon">👤</div>
+          <div>
+            <div className="detail-label">Pemilik</div>
+            <div className="detail-value">Vosue Akiti</div>
+          </div>
         </div>
-        <div className="detail-row">
-          <span className="detail-icon">📞</span>
-          <span>{venueInfo.phone}</span>
+        
+        <div className="detail-item">
+          <div className="detail-icon">📍</div>
+          <div>
+            <div className="detail-label">Alamat</div>
+            <div className="detail-value">Jl. Shisham Ma No. 45, Sidonjo</div>
+          </div>
         </div>
-        <div className="detail-row">
-          <span className="detail-icon">🕒</span>
-          <span>{venueInfo.operatingHours}</span>
+        
+        <div className="detail-item">
+          <div className="detail-icon">📞</div>
+          <div>
+            <div className="detail-label">Telepon</div>
+            <div className="detail-value">0019 990124</div>
+          </div>
         </div>
-      </div>
-      
-      <div className="facilities-section">
-        <h4>Fasilitas:</h4>
-        <div className="facilities-tags">
-          {venueInfo.facilities.map((facility, idx) => (
-            <span key={idx} className="facility-tag">✓ {facility}</span>
-          ))}
+        
+        <div className="detail-item">
+          <div className="detail-icon">🕒</div>
+          <div>
+            <div className="detail-label">Jam Operasional</div>
+            <div className="detail-value">07:00 - 22:00</div>
+          </div>
         </div>
       </div>
     </div>
