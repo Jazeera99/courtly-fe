@@ -1,4 +1,4 @@
-// src/pages/mitra/Bookings.tsx
+// src/pages/mitra/Bookings.tsx - Diperbarui untuk full-width dengan scroll horizontal
 import React, { useState } from 'react';
 import { Search, Filter, Calendar, Download } from 'lucide-react';
 import '../../styles/PartnerDashboard.css';
@@ -44,14 +44,6 @@ const Bookings: React.FC = () => {
     }
   };
 
-  const getPaymentColor = (payment: string) => {
-    return payment === 'paid' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
-  };
-
-  const getPaymentText = (payment: string) => {
-    return payment === 'paid' ? 'Lunas' : 'Belum Bayar';
-  };
-
   return (
     <div className="mitra-page fullscreen-content">
       <div className="page-content">
@@ -61,14 +53,7 @@ const Bookings: React.FC = () => {
         </div>
 
         {/* Filters and Actions */}
-        <div className="booking-filters" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
+        <div className="booking-filters">
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative' }}>
               <Search size={20} style={{
@@ -138,96 +123,81 @@ const Bookings: React.FC = () => {
           </div>
         </div>
 
-        {/* Bookings Table */}
-        <div className="data-table">
-          <div className="table-header" style={{
-            gridTemplateColumns: '80px 180px 180px 120px 120px 120px 120px 100px 100px 120px'
-          }}>
-            <div>ID</div>
-            <div>Lapangan</div>
-            <div>Pelanggan</div>
-            <div>Telepon</div>
-            <div>Tanggal</div>
-            <div>Waktu</div>
-            <div>Durasi</div>
-            <div>Status</div>
-            <div>Pembayaran</div>
-            <div>Aksi</div>
-          </div>
+        {/* Bookings Table with Horizontal Scroll */}
+        <div className="content-card" style={{ marginTop: '24px' }}>
+          <div className="data-table-scroll">
+            <div className="table-wrapper">
+              <div className="table-header">
+                <div>ID</div>
+                <div>Lapangan</div>
+                <div>Pelanggan</div>
+                <div>Telepon</div>
+                <div>Tanggal</div>
+                <div>Waktu</div>
+                <div>Durasi</div>
+                <div>Status</div>
+                <div>Pembayaran</div>
+                <div>Aksi</div>
+              </div>
 
-          {bookings.map((booking) => (
-            <div key={booking.id} className="table-row" style={{
-              gridTemplateColumns: '80px 180px 180px 120px 120px 120px 120px 100px 100px 120px'
-            }}>
-              <div className="table-cell">#{booking.id}</div>
-              <div className="table-cell primary">{booking.court}</div>
-              <div className="table-cell">
-                <div style={{ fontWeight: '600' }}>{booking.customer}</div>
-              </div>
-              <div className="table-cell">{booking.phone}</div>
-              <div className="table-cell">{booking.date}</div>
-              <div className="table-cell">{booking.time}</div>
-              <div className="table-cell">{booking.duration} jam</div>
-              <div className="table-cell">
-                <span className={`booking-status ${getStatusColor(booking.status)}`}>
-                  {getStatusText(booking.status)}
-                </span>
-              </div>
-              <div className="table-cell">
-                <span style={{
-                  padding: '4px 8px',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: '500',
-                  ...(booking.payment === 'paid' 
-                    ? { backgroundColor: '#d1fae5', color: '#065f46' }
-                    : { backgroundColor: '#fee2e2', color: '#991b1b' })
-                }}>
-                  {getPaymentText(booking.payment)}
-                </span>
-              </div>
-              <div className="table-cell">
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
-                    Detail
-                  </button>
-                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
-                    Edit
-                  </button>
+              {bookings.map((booking) => (
+                <div key={booking.id} className="table-row">
+                  <div className="table-cell">#{booking.id}</div>
+                  <div className="table-cell primary">{booking.court}</div>
+                  <div className="table-cell">
+                    <div style={{ fontWeight: '600' }}>{booking.customer}</div>
+                  </div>
+                  <div className="table-cell">{booking.phone}</div>
+                  <div className="table-cell">{booking.date}</div>
+                  <div className="table-cell">{booking.time}</div>
+                  <div className="table-cell">{booking.duration} jam</div>
+                  <div className="table-cell">
+                    <span className={`booking-status ${getStatusColor(booking.status)}`}>
+                      {getStatusText(booking.status)}
+                    </span>
+                  </div>
+                  <div className="table-cell">
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      ...(booking.payment === 'paid' 
+                        ? { backgroundColor: '#d1fae5', color: '#065f46' }
+                        : { backgroundColor: '#fee2e2', color: '#991b1b' })
+                    }}>
+                      {booking.payment === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                    </span>
+                  </div>
+                  <div className="table-cell">
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
+                        Detail
+                      </button>
+                      <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
+                        Edit
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
         {/* Summary Stats */}
         <div className="grid-3" style={{ marginTop: '32px' }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb'
-          }}>
+          <div className="content-card">
             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px' }}>Total Booking</div>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{bookings.length}</div>
           </div>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb'
-          }}>
+          <div className="content-card">
             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px' }}>Pendapatan Bulan Ini</div>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>
               Rp {bookings.filter(b => b.payment === 'paid').reduce((sum, b) => sum + b.price, 0).toLocaleString()}
             </div>
           </div>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb'
-          }}>
+          <div className="content-card">
             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px' }}>Booking Menunggu</div>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>
               {bookings.filter(b => b.status === 'pending').length}

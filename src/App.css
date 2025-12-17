@@ -152,7 +152,7 @@ body {
 
 /* Main Content */
 .main-content {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   padding: var(--spacing-lg);
   min-height: calc(100vh - 80px);

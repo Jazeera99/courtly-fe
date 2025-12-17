@@ -1,4 +1,4 @@
-// src/pages/mitra/Dashboard.tsx
+// src/pages/mitra/Dashboard.tsx - Diperbarui untuk full-width
 import React from 'react';
 import StatsCard from '../../components/mitra/StatsCard';
 import BookingList from '../../components/mitra/BookingList';
@@ -30,7 +30,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="mitra-dashboard fullscreen-content">
-      <div className="dashboard-content">
+      <div className="page-content">
         <VenueInfoCard />
         
         <div className="stats-grid">
@@ -83,41 +83,43 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="booking-section" style={{ marginTop: '32px' }}>
+        <div className="content-card" style={{ marginTop: '32px' }}>
           <div className="section-header">
             <h2>📋 Booking Terbaru</h2>
           </div>
-          <div className="data-table">
-            <div className="table-header">
-              <div>ID</div>
-              <div>Lapangan</div>
-              <div>Pelanggan</div>
-              <div>Tanggal</div>
-              <div>Waktu</div>
-              <div>Status</div>
-              <div>Harga</div>
-              <div>Aksi</div>
-            </div>
-            {recentBookings.map((booking) => (
-              <div key={booking.id} className="table-row">
-                <div className="table-cell">#{booking.id}</div>
-                <div className="table-cell primary">{booking.court}</div>
-                <div className="table-cell">{booking.customer}</div>
-                <div className="table-cell">{booking.date}</div>
-                <div className="table-cell">{booking.time}</div>
-                <div className="table-cell">
-                  <span className={`booking-status status-${booking.status}`}>
-                    {booking.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
-                  </span>
-                </div>
-                <div className="table-cell primary">Rp {booking.price.toLocaleString()}</div>
-                <div className="table-cell">
-                  <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
-                    Detail
-                  </button>
-                </div>
+          <div className="data-table-scroll">
+            <div className="table-wrapper">
+              <div className="table-header">
+                <div>ID</div>
+                <div>Lapangan</div>
+                <div>Pelanggan</div>
+                <div>Tanggal</div>
+                <div>Waktu</div>
+                <div>Status</div>
+                <div>Harga</div>
+                <div>Aksi</div>
               </div>
-            ))}
+              {recentBookings.map((booking) => (
+                <div key={booking.id} className="table-row">
+                  <div className="table-cell">#{booking.id}</div>
+                  <div className="table-cell primary">{booking.court}</div>
+                  <div className="table-cell">{booking.customer}</div>
+                  <div className="table-cell">{booking.date}</div>
+                  <div className="table-cell">{booking.time}</div>
+                  <div className="table-cell">
+                    <span className={`booking-status status-${booking.status}`}>
+                      {booking.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
+                    </span>
+                  </div>
+                  <div className="table-cell primary">Rp {booking.price.toLocaleString()}</div>
+                  <div className="table-cell">
+                    <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
+                      Detail
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

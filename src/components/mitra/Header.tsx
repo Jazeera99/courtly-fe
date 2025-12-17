@@ -1,6 +1,6 @@
-// src/components/mitra/Header.tsx
+// src/components/mitra/Header.tsx - Diperbarui untuk full-width
 import React from 'react';
-import { Bell, Search, Calendar } from 'lucide-react';
+import { Bell, Search, Calendar, Menu } from 'lucide-react';
 
 const Header: React.FC = () => {
   const today = new Date().toLocaleDateString('id-ID', {
@@ -18,27 +18,42 @@ const Header: React.FC = () => {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+      width: '100%',
+      position: 'sticky',
+      top: 0,
+      zIndex: 100
     }}>
-      <div>
-        <h1 style={{
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-          color: '#1f2937',
-          marginBottom: '4px'
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <button className="mobile-menu-toggle" style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'none'
         }}>
-          Dashboard Mitra
-        </h1>
-        <p style={{
-          color: '#6b7280',
-          fontSize: '0.875rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <Calendar size={14} />
-          {today}
-        </p>
+          <Menu size={24} />
+        </button>
+        
+        <div>
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '4px'
+          }}>
+            Dashboard Mitra
+          </h1>
+          <p style={{
+            color: '#6b7280',
+            fontSize: '0.875rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <Calendar size={14} />
+            {today}
+          </p>
+        </div>
       </div>
 
       <div style={{
