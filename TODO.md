@@ -1,18 +1,25 @@
-# Admin Layout Spacing Fix
+# BookingPage Database Integration Tasks
 
-## Completed Tasks
-- [x] Reduced sidebar width from 280px to 240px in AdminLayout.css
-- [x] Cleaned up duplicate CSS rules in AdminLayout.css
-- [x] Reduced dashboard padding from 40px 56px to 32px 40px in AdminDashboard.css
+## Current Status
+- [x] Analyze current BookingPage.tsx structure
+- [x] Review GraphQL queries and mutations
+- [x] Understand database schema from Prisma
+- [x] Plan integration approach
 
-## Summary
-The issue was that the admin dashboard content was being cut off on laptop screens due to excessive spacing between the sidebar and content. By reducing the sidebar width and dashboard padding, more space is now available for the content area.
+## Integration Tasks
+- [ ] Replace hard-coded courts with Apollo GraphQL query
+- [ ] Update data mapping for Court interface from database fields
+- [ ] Implement availability checking using reservations data
+- [ ] Replace booking logic with GraphQL mutations
+- [ ] Remove fallback mechanisms (REST, localStorage)
+- [ ] Test GraphQL integration
+- [ ] Handle error states and loading states properly
 
-## Changes Made
-1. **AdminLayout.css**: Changed `--sidebar-width` from 280px to 240px
-2. **AdminDashboard.css**: Changed padding from 40px 56px to 32px 40px
+## Files to Edit
+- [ ] src/pages/BookingPage.tsx - Main integration file
 
 ## Testing
-- The layout should now display properly on laptop screens without content being cut off
-- Sidebar collapse functionality remains intact
-- Responsive design for mobile/tablet is preserved
+- [ ] Verify courts load from database
+- [ ] Test availability checking
+- [ ] Test booking creation
+- [ ] Check error handling

@@ -1,13 +1,22 @@
 // src/pages/mitra/Bookings.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../../styles/PartnerDashboard.css';
+import api from '@/utils/api';
 
 const Bookings: React.FC = () => {
-  const [bookings] = useState([
-    { id: 1, court: 'Lapangan Futsal 1', customer: 'John Doe', date: '2024-01-15', time: '16:00-17:00', status: 'confirmed', price: 150000 },
-    { id: 2, court: 'Lapangan Badminton A', customer: 'Jane Smith', date: '2024-01-15', time: '18:00-19:00', status: 'confirmed', price: 80000 },
-    { id: 3, court: 'Lapangan Futsal 2', customer: 'Bob Johnson', date: '2024-01-16', time: '20:00-21:00', status: 'pending', price: 150000 },
-  ]);
+  const [bookings, setBookings] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await api.get('/bookings');
+        setBookings(res.data || []);
+      } catch (err) {
+        console.error('Failed to load bookings', err);
+      }
+    };
+    load();
+  }, []);
 
   return (
     <div className="mitra-page fullscreen-content">

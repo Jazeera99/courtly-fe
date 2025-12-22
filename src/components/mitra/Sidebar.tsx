@@ -124,7 +124,7 @@ const Sidebar: React.FC = () => {
           <span>Status: Online</span>
         </div>
         <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>
-          © 2024 SportHub Reservasi
+          © 2025 SportHub Reservasi
         </div>
       </div>
     </div>

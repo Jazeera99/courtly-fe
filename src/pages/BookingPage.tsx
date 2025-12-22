@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_BOOKING_DATA } from '../graphql/queries';
+import { CREATE_RESERVATION_DRAFT, MUTATION_CONFIRM } from '../graphql/mutations';
 import '../styles/BookingPage.css';
 
 interface Court {
@@ -45,24 +48,196 @@ interface BookingPageProps {
   user?: { id: string; email: string; name: string } | null;
 }
 
+const HARD_CODED_COURTS: Court[] = [
+  {
+    id: '1',
+    name: 'Court A - Premium',
+    venue: 'Balikpapan Padel Club',
+    type: 'Padel Court',
+    sport: 'padel',
+    indoor: true,
+    price: 250000,
+    rating: 4.9,
+    image: '🎾',
+    description: 'Lapangan padel premium dengan surface berkualitas tinggi, cocok untuk pertandingan profesional',
+    facilities: ['AC', 'Lighting', 'Changing Room', 'Shower'],
+    location: 'Jl. Sudirman No. 123, Balikpapan'
+  },
+  {
+    id: '2',
+    name: 'Court B - Standard',
+    venue: 'Balikpapan Padel Club',
+    type: 'Padel Court',
+    sport: 'padel',
+    indoor: true,
+    price: 200000,
+    rating: 4.7,
+    image: '🎾',
+    description: 'Lapangan padel standar dengan fasilitas lengkap untuk latihan dan pertandingan casual',
+    facilities: ['AC', 'Lighting', 'Changing Room'],
+    location: 'Jl. Sudirman No. 123, Balikpapan'
+  },
+  {
+    id: '3',
+    name: 'Lapangan Futsal 1',
+    venue: 'GOR Sidoarjo Sport Center',
+    type: 'Futsal',
+    sport: 'futsal',
+    indoor: true,
+    price: 150000,
+    rating: 4.6,
+    image: '⚽',
+    description: 'Lapangan futsal indoor dengan rumput sintetis berkualitas, ukuran standar nasional',
+    facilities: ['AC', 'Tribune', 'Lighting', 'Music System'],
+    location: 'Jl. Pahlawan No. 45, Sidoarjo'
+  },
+  {
+    id: '4',
+    name: 'Lapangan Futsal 2',
+    venue: 'GOR Sidoarjo Sport Center',
+    type: 'Futsal',
+    sport: 'futsal',
+    indoor: true,
+    price: 130000,
+    rating: 4.5,
+    image: '⚽',
+    description: 'Lapangan futsal dengan surface terbaru, cocok untuk latihan tim',
+    facilities: ['AC', 'Lighting', 'Changing Room'],
+    location: 'Jl. Pahlawan No. 45, Sidoarjo'
+  },
+  {
+    id: '5',
+    name: 'Lapangan Basket Utama',
+    venue: 'Sidoarjo Basketball Court',
+    type: 'Basket',
+    sport: 'basket',
+    indoor: false,
+    price: 120000,
+    rating: 4.4,
+    image: '🏀',
+    description: 'Lapangan basket outdoor dengan flooring berkualitas, ring profesional',
+    facilities: ['Lighting', 'Bench', 'Scoreboard'],
+    location: 'Jl. Merdeka No. 67, Sidoarjo'
+  },
+  {
+    id: '6',
+    name: 'Court Tenis 1',
+    venue: 'Sidoarjo Tennis Complex',
+    type: 'Tenis',
+    sport: 'tennis',
+    indoor: false,
+    price: 180000,
+    rating: 4.7,
+    image: '🎾',
+    description: 'Lapangan tenis hard court dengan surface standar internasional',
+    facilities: ['Lighting', 'Net', 'Bench'],
+    location: 'Jl. Sport No. 89, Sidoarjo'
+  },
+  {
+    id: '7',
+    name: 'Lapangan Badminton A',
+    venue: 'GOR Sidoarjo Sport Center',
+    type: 'Badminton',
+    sport: 'badminton',
+    indoor: true,
+    price: 80000,
+    rating: 4.3,
+    image: '🏸',
+    description: 'Lapangan badminton indoor dengan lighting profesional, lantai kayu maple',
+    facilities: ['AC', 'Lighting', 'Changing Room'],
+    location: 'Jl. Pahlawan No. 45, Sidoarjo'
+  },
+  {
+    id: '8',
+    name: 'Lapangan Badminton B',
+    venue: 'GOR Sidoarjo Sport Center',
+    type: 'Badminton',
+    sport: 'badminton',
+    indoor: true,
+    price: 70000,
+    rating: 4.2,
+    image: '🏸',
+    description: 'Lapangan badminton untuk latihan dengan harga terjangkau',
+    facilities: ['AC', 'Lighting'],
+    location: 'Jl. Pahlawan No. 45, Sidoarjo'
+  },
+  {
+    id: '9',
+    name: 'Lapangan Voli Pantai',
+    venue: 'Sidoarjo Beach Sport Arena',
+    type: 'Voli Pantai',
+    sport: 'volleyball',
+    indoor: false,
+    price: 100000,
+    rating: 4.5,
+    image: '🏐',
+    description: 'Lapangan voli pantai dengan pasir putih berkualitas, area yang luas',
+    facilities: ['Beach Area', 'Shower', 'Rest Area'],
+    location: 'Pantai Sidoarjo, Jawa Timur'
+  }
+];
+
 const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedTime, setSelectedTime] = useState<string>('');
+
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedCourt, setSelectedCourt] = useState<string>('');
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<Array<{date: string, time: string}>>([]);
   const [bookingRepeat, setBookingRepeat] = useState<'none' | 'weekly' | 'monthly'>('none');
   const [repeatWeeks, setRepeatWeeks] = useState<number>(1);
   const [repeatMonths, setRepeatMonths] = useState<number>(1);
-  
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sportFilter, setSportFilter] = useState<string>('all');
   const [priceFilter, setPriceFilter] = useState<string>('all');
   const [step, setStep] = useState<number>(1);
-  
+
+  // Apollo GraphQL queries
+  const { data: bookingData, loading: loadingCourts, error: courtsError } = useQuery(GET_BOOKING_DATA, {
+    variables: { date: selectedDate || new Date().toISOString().split('T')[0] },
+    skip: !selectedDate, // Only run when date is selected
+  });
+
+  // Transform database fields to Court interface
+  const [courts, setCourts] = useState<Court[]>([]);
+  // const courts: Court[] = bookingData?.getFields?.map((field: any) => ({
+  //   id: field.id.toString(),
+  //   name: field.name,
+  //   venue: field.venues?.[0]?.name || 'Unknown Venue',
+  //   type: field.name.includes('Futsal') ? 'Futsal' :
+  //         field.name.includes('Basket') ? 'Basket' :
+  //         field.name.includes('Tenis') ? 'Tenis' :
+  //         field.name.includes('Badminton') ? 'Badminton' :
+  //         field.name.includes('Voli') ? 'Voli Pantai' :
+  //         field.name.includes('Padel') ? 'Padel Court' : 'Unknown',
+  //   sport: field.name.toLowerCase().includes('futsal') ? 'futsal' :
+  //          field.name.toLowerCase().includes('basket') ? 'basket' :
+  //          field.name.toLowerCase().includes('tenis') ? 'tennis' :
+  //          field.name.toLowerCase().includes('badminton') ? 'badminton' :
+  //          field.name.toLowerCase().includes('voli') ? 'volleyball' :
+  //          field.name.toLowerCase().includes('padel') ? 'padel' : 'unknown',
+  //   indoor: true, // Default to indoor, can be updated based on database
+  //   price: field.price_per_hour || 0,
+  //   rating: 4.5, // Default rating, can be updated based on database
+  //   image: field.field_images?.[0]?.image_path ? `http://localhost:4000${field.field_images[0].image_path}` : '🏟️',
+  //   description: field.description || 'Lapangan berkualitas untuk olahraga Anda',
+  //   facilities: field.field_facilities?.map((f: any) => f.facilities?.name).filter(Boolean) || [],
+  //   location: field.full_address || field.city || 'Unknown Location'
+  // })) || [];
+
+  // Transform reservations to booked slots
+  const bookedSlots: TimeSlot[] = bookingData?.getReservedSlots?.map((reservation: any) => ({
+    time: reservation.start_time,
+    available: false,
+    courtId: reservation.field_id.toString()
+  })) || [];
+
+  // Mutation for creating reservation draft
+  const [createReservationDraft, { loading: creatingDraft }] = useMutation(CREATE_RESERVATION_DRAFT);
+  const [confirmReservation, { loading: confirming }] = useMutation(MUTATION_CONFIRM);
+
   // Store current month as YYYY-MM string to avoid timezone issues
   const today = new Date();
   const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -70,10 +245,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
 
   // Check if venueId is provided from venue detail page
   useEffect(() => {
-    console.log('BookingPage mounted');
     const venueId = searchParams.get('venueId');
     if (venueId) {
-      // If the incoming venueId corresponds to a court id, auto-select it
       setSelectedCourt(venueId);
       setStep(2); // Skip to time selection step
     }
@@ -84,159 +257,15 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     console.log('selectedDate changed to:', selectedDate);
   }, [selectedDate]);
 
-  // Data courts/lapangan yang lengkap
-  const courts: Court[] = [
-    {
-      id: '1',
-      name: 'Court A - Premium',
-      venue: 'Balikpapan Padel Club',
-      type: 'Padel Court',
-      sport: 'padel',
-      indoor: true,
-      price: 250000,
-      rating: 4.9,
-      image: '🎾',
-      description: 'Lapangan padel premium dengan surface berkualitas tinggi, cocok untuk pertandingan profesional',
-      facilities: ['AC', 'Lighting', 'Changing Room', 'Shower'],
-      location: 'Jl. Sudirman No. 123, Balikpapan'
-    },
-    {
-      id: '2',
-      name: 'Court B - Standard',
-      venue: 'Balikpapan Padel Club',
-      type: 'Padel Court',
-      sport: 'padel',
-      indoor: true,
-      price: 200000,
-      rating: 4.7,
-      image: '🎾',
-      description: 'Lapangan padel standar dengan fasilitas lengkap untuk latihan dan pertandingan casual',
-      facilities: ['AC', 'Lighting', 'Changing Room'],
-      location: 'Jl. Sudirman No. 123, Balikpapan'
-    },
-    {
-      id: '3',
-      name: 'Lapangan Futsal 1',
-      venue: 'GOR Sidoarjo Sport Center',
-      type: 'Futsal',
-      sport: 'futsal',
-      indoor: true,
-      price: 150000,
-      rating: 4.6,
-      image: '⚽',
-      description: 'Lapangan futsal indoor dengan rumput sintetis berkualitas, ukuran standar nasional',
-      facilities: ['AC', 'Tribune', 'Lighting', 'Music System'],
-      location: 'Jl. Pahlawan No. 45, Sidoarjo'
-    },
-    {
-      id: '4',
-      name: 'Lapangan Futsal 2',
-      venue: 'GOR Sidoarjo Sport Center',
-      type: 'Futsal',
-      sport: 'futsal',
-      indoor: true,
-      price: 130000,
-      rating: 4.5,
-      image: '⚽',
-      description: 'Lapangan futsal dengan surface terbaru, cocok untuk latihan tim',
-      facilities: ['AC', 'Lighting', 'Changing Room'],
-      location: 'Jl. Pahlawan No. 45, Sidoarjo'
-    },
-    {
-      id: '5',
-      name: 'Lapangan Basket Utama',
-      venue: 'Sidoarjo Basketball Court',
-      type: 'Basket',
-      sport: 'basket',
-      indoor: false,
-      price: 120000,
-      rating: 4.4,
-      image: '🏀',
-      description: 'Lapangan basket outdoor dengan flooring berkualitas, ring profesional',
-      facilities: ['Lighting', 'Bench', 'Scoreboard'],
-      location: 'Jl. Merdeka No. 67, Sidoarjo'
-    },
-    {
-      id: '6',
-      name: 'Court Tenis 1',
-      venue: 'Sidoarjo Tennis Complex',
-      type: 'Tenis',
-      sport: 'tennis',
-      indoor: false,
-      price: 180000,
-      rating: 4.7,
-      image: '🎾',
-      description: 'Lapangan tenis hard court dengan surface standar internasional',
-      facilities: ['Lighting', 'Net', 'Bench'],
-      location: 'Jl. Sport No. 89, Sidoarjo'
-    },
-    {
-      id: '7',
-      name: 'Lapangan Badminton A',
-      venue: 'GOR Sidoarjo Sport Center',
-      type: 'Badminton',
-      sport: 'badminton',
-      indoor: true,
-      price: 80000,
-      rating: 4.3,
-      image: '🏸',
-      description: 'Lapangan badminton indoor dengan lighting profesional, lantai kayu maple',
-      facilities: ['AC', 'Lighting', 'Changing Room'],
-      location: 'Jl. Pahlawan No. 45, Sidoarjo'
-    },
-    {
-      id: '8',
-      name: 'Lapangan Badminton B',
-      venue: 'GOR Sidoarjo Sport Center',
-      type: 'Badminton',
-      sport: 'badminton',
-      indoor: true,
-      price: 70000,
-      rating: 4.2,
-      image: '🏸',
-      description: 'Lapangan badminton untuk latihan dengan harga terjangkau',
-      facilities: ['AC', 'Lighting'],
-      location: 'Jl. Pahlawan No. 45, Sidoarjo'
-    },
-    {
-      id: '9',
-      name: 'Lapangan Voli Pantai',
-      venue: 'Sidoarjo Beach Sport Arena',
-      type: 'Voli Pantai',
-      sport: 'volleyball',
-      indoor: false,
-      price: 100000,
-      rating: 4.5,
-      image: '🏐',
-      description: 'Lapangan voli pantai dengan pasir putih berkualitas, area yang luas',
-      facilities: ['Beach Area', 'Shower', 'Rest Area'],
-      location: 'Pantai Sidoarjo, Jawa Timur'
-    }
-  ];
-
-// Generate dates untuk 1 bulan penuh
-    const getDatesForMonth = (yearMonthStr: string) => {
+  // Calendar helper (unchanged)
+  const getDatesForMonth = (yearMonthStr: string) => {
     const dates = [];
-    
-    // Parse YYYY-MM format
     const [yearStr, monthStr] = yearMonthStr.split('-');
     const year = parseInt(yearStr);
-    const monthIndex = parseInt(monthStr) - 1; // Convert to 0-based month
-    
-    console.log('getDatesForMonth - yearMonthStr:', yearMonthStr, 'year:', year, 'monthIndex:', monthIndex);
-    
-    // Dapatkan hari pertama bulan
+    const monthIndex = parseInt(monthStr) - 1;
     const firstDay = new Date(year, monthIndex, 1);
-    const firstDayOfWeek = firstDay.getDay(); // 0 = Minggu, 1 = Senin, dst.
-    
-    console.log('firstDay:', firstDay.toDateString(), 'firstDayOfWeek:', firstDayOfWeek);
-    
-    // Tanggal mulai dari bulan sebelumnya
+    const firstDayOfWeek = firstDay.getDay();
     const startDate = new Date(year, monthIndex, 1 - firstDayOfWeek);
-    
-    console.log('startDate:', startDate.toDateString());
-    
-    // Jumlah sel kalender (6 minggu x 7 hari)
     const totalCells = 42;
     const todayObj = new Date();
     const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
@@ -244,11 +273,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     for (let i = 0; i < totalCells; i++) {
       const current = new Date(year, monthIndex, 1 - firstDayOfWeek + i);
       const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
-      
-      if (i < 7 || i >= 35) {
-        console.log(`i=${i}, date: ${dateStr}, display: ${current.getDate()}, isCurrentMonth: ${current.getMonth() === monthIndex}`);
-      }
-      
       dates.push({
         date: dateStr,
         display: current.getDate().toString(),
@@ -260,7 +284,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
       });
     }
   
-  return dates;
+    return dates;
   };
 
   const availableDates = getDatesForMonth(currentMonth);
@@ -301,74 +325,72 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
 
   // Fungsi untuk cek apakah waktu sudah lewat
   const isTimeInPast = (selectedDate: string, time: string) => {
-  if (!selectedDate) return false;
-  
-  const now = new Date();
-  const [hours] = time.split(':').map(Number);
-  const slotDateTime = new Date(selectedDate);
-  slotDateTime.setHours(hours, 0, 0, 0);
-  
-  return slotDateTime < now;
+    if (!selectedDate) return false;
+    const now = new Date();
+    const [hours] = time.split(':').map(Number);
+    const slotDateTime = new Date(selectedDate);
+    slotDateTime.setHours(hours, 0, 0, 0);
+    return slotDateTime < now;
   };
 
-  // Mock data untuk jadwal yang sudah dibooking (lebih realistis)
-  const generateBookedSlots = (): TimeSlot[] => {
+  // Fallback generator in case backend not available
+  const generateBookedSlots = (courtIds: string[] = ['1','2','3','4']): TimeSlot[] => {
     const booked: TimeSlot[] = [];
-    const courtsToBook = ['1', '2', '3', '4'];
-    
+    const courtsToBook = courtIds;
     courtsToBook.forEach(courtId => {
-      // Book random time slots untuk setiap court
-      const randomSlots = timeSlots
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 4); // Book 4 random slots per court
-        
-      randomSlots.forEach(time => {
+      const shuffled = [...timeSlots].sort(() => 0.5 - Math.random()).slice(0, 3);
+      shuffled.forEach(time => {
         booked.push({ time, available: false, courtId });
       });
     });
-    
     return booked;
   };
 
-  const bookedSlots = generateBookedSlots();
+
+
+
 
   // Filter courts berdasarkan pencarian dan filter
   const filteredCourts = courts.filter(court => {
-    const matchesSearch = court.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         court.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         court.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = court.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         court.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         court.location?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSport = sportFilter === 'all' || court.sport === sportFilter;
-    const matchesPrice = priceFilter === 'all' || 
+    const matchesPrice = priceFilter === 'all' ||
                         (priceFilter === 'low' && court.price < 100000) ||
                         (priceFilter === 'medium' && court.price >= 100000 && court.price <= 200000) ||
                         (priceFilter === 'high' && court.price > 200000);
-    
+
     return matchesSearch && matchesSport && matchesPrice;
+  });
+
+  // Debug logging
+  console.log('BookingPage Debug:', {
+    selectedDate,
+    loadingCourts,
+    courtsError,
+    bookingData,
+    courts: courts.length,
+    filteredCourts: filteredCourts.length
   });
 
   // Cek ketersediaan time slot untuk court tertentu
   const isTimeSlotAvailable = (courtId: string, time: string) => {
-    const booked = bookedSlots.find(slot => 
-      slot.courtId === courtId && slot.time === time && !slot.available
-    );
+    const booked = bookedSlots.find(slot => slot.courtId === courtId && slot.time === time && !slot.available);
     return !booked;
   };
 
   // Fungsi untuk menambah/menghapus slot waktu yang dipilih
   const toggleTimeSlot = (time: string) => {
     if (!selectedDate) return;
-    
     const existingIndex = selectedTimeSlots.findIndex(
       slot => slot.date === selectedDate && slot.time === time
     );
-    
     if (existingIndex >= 0) {
-      // Remove if already selected
       const newSlots = [...selectedTimeSlots];
       newSlots.splice(existingIndex, 1);
       setSelectedTimeSlots(newSlots);
     } else {
-      // Add new slot
       setSelectedTimeSlots([...selectedTimeSlots, { date: selectedDate, time }]);
     }
   };
@@ -376,29 +398,20 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   // Fungsi untuk pilih banyak waktu sekaligus
   const selectMultipleTimeSlots = (startTime: string, endTime: string) => {
     if (!selectedDate) return;
-    
     const startHour = parseInt(startTime.split(':')[0]);
     const endHour = parseInt(endTime.split(':')[0]);
-    
     const newSlots = [...selectedTimeSlots];
-    
     for (let hour = startHour; hour < endHour; hour++) {
       const time = `${hour.toString().padStart(2, '0')}:00`;
-      
-      // Cek apakah slot sudah dipilih
       const alreadySelected = newSlots.some(
         slot => slot.date === selectedDate && slot.time === time
       );
-      
-      // Cek apakah slot tersedia
       const isAvailable = isTimeSlotAvailable(selectedCourt, time);
       const isPast = isTimeInPast(selectedDate, time);
-      
       if (!alreadySelected && isAvailable && !isPast) {
         newSlots.push({ date: selectedDate, time });
       }
     }
-    
     setSelectedTimeSlots(newSlots);
   };
 
@@ -407,16 +420,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     if (!selectedDate || selectedTimeSlots.length === 0 || bookingRepeat === 'none') {
       return selectedTimeSlots;
     }
-    
     const allSlots: Array<{date: string, time: string}> = [...selectedTimeSlots];
     const baseDate = new Date(selectedDate);
-    
     if (bookingRepeat === 'weekly') {
       for (let week = 1; week <= repeatWeeks; week++) {
         const weekDate = new Date(baseDate);
         weekDate.setDate(weekDate.getDate() + (week * 7));
         const dateStr = weekDate.toISOString().split('T')[0];
-        
         selectedTimeSlots.forEach(slot => {
           allSlots.push({ date: dateStr, time: slot.time });
         });
@@ -426,13 +436,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
         const monthDate = new Date(baseDate);
         monthDate.setMonth(monthDate.getMonth() + month);
         const dateStr = monthDate.toISOString().split('T')[0];
-        
         selectedTimeSlots.forEach(slot => {
           allSlots.push({ date: dateStr, time: slot.time });
         });
       }
     }
-    
     return allSlots;
   };
 
@@ -440,7 +448,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   const calculateTotalPrice = () => {
     const selectedCourtData = courts.find(c => c.id === selectedCourt);
     if (!selectedCourtData) return 0;
-    
     const allBookings = generateRepeatBookings();
     return allBookings.length * selectedCourtData.price;
   };
@@ -449,69 +456,57 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     // Check for pending booking from location state
     if (location.state?.restoreBooking && location.state?.bookingData) {
       const bookingData = location.state.bookingData;
-      
-      // Restore semua data booking
-      if (bookingData.selectedDate) {
-        setSelectedDate(bookingData.selectedDate);
-      }
-      if (bookingData.selectedCourt) {
-        setSelectedCourt(bookingData.selectedCourt);
-      }
-      if (bookingData.selectedTimeSlots) {
-        setSelectedTimeSlots(bookingData.selectedTimeSlots);
-      }
-      if (bookingData.step) {
-        setStep(bookingData.step);
-      }
+      if (bookingData.selectedDate) setSelectedDate(bookingData.selectedDate);
+      if (bookingData.selectedCourt) setSelectedCourt(bookingData.selectedCourt);
+      if (bookingData.selectedTimeSlots) setSelectedTimeSlots(bookingData.selectedTimeSlots);
+      if (bookingData.step) setStep(bookingData.step);
     }
 
     // Check for pending booking from sessionStorage (fallback)
     const pendingBooking = sessionStorage.getItem('pendingBooking');
     if (pendingBooking && user) {
       const bookingData = JSON.parse(pendingBooking);
-      
-      // Restore booking data
-      if (bookingData.selectedDate) {
-        setSelectedDate(bookingData.selectedDate);
-      }
-      if (bookingData.selectedCourt) {
-        setSelectedCourt(bookingData.selectedCourt);
-      }
-      if (bookingData.selectedTimeSlots) {
-        setSelectedTimeSlots(bookingData.selectedTimeSlots);
-      }
-      if (bookingData.step) {
-        setStep(bookingData.step);
-      }
-      
-      // Clear pending booking
+      if (bookingData.selectedDate) setSelectedDate(bookingData.selectedDate);
+      if (bookingData.selectedCourt) setSelectedCourt(bookingData.selectedCourt);
+      if (bookingData.selectedTimeSlots) setSelectedTimeSlots(bookingData.selectedTimeSlots);
+      if (bookingData.step) setStep(bookingData.step);
       sessionStorage.removeItem('pendingBooking');
     }
   }, [location.state, user]);
 
   useEffect(() => {
-  // Check for pending booking data after login
-  const pendingBooking = localStorage.getItem('pendingBooking');
-  if (pendingBooking) {
-    const bookingData = JSON.parse(pendingBooking);
-    
-    // Restore booking data
-    if (bookingData.selectedDate) {
-      setSelectedDate(bookingData.selectedDate);
+    const pendingBooking = localStorage.getItem('pendingBooking');
+    if (pendingBooking) {
+      const bookingData = JSON.parse(pendingBooking);
+      if (bookingData.selectedDate) setSelectedDate(bookingData.selectedDate);
+      if (bookingData.selectedCourt) setSelectedCourt(bookingData.selectedCourt);
+      if (bookingData.selectedTimeSlots) {
+        setSelectedTimeSlots(bookingData.selectedTimeSlots);
+        setStep(3);
+      }
+      localStorage.removeItem('pendingBooking');
     }
-    if (bookingData.selectedCourt) {
-      setSelectedCourt(bookingData.selectedCourt);
-    }
-    if (bookingData.selectedTimeSlots) {
-      setSelectedTimeSlots(bookingData.selectedTimeSlots);
-      setStep(3); // Langsung ke step pembayaran
-    }
-    
-    // Clear pending booking
-    localStorage.removeItem('pendingBooking');
-  }
-}, []);
+  }, []);
 
+  useEffect(() => {
+  if (bookingData && bookingData.fields) {
+    const mappedCourts: Court[] = bookingData.fields.map((f: any) => ({
+      id: f.id,
+      name: f.name,
+      venue: f.location || "Venue Utama", 
+      location: f.city,
+      type: "Umum",
+      sport: "Padel", 
+      price: parseFloat(f.price_per_hour), 
+      image: f.field_images?.[0]?.image_path ? `http://localhost:4000${f.field_images[0].image_path}` : "🏟️",
+      description: f.description,
+      facilities: f.field_facilities?.map((ff: any) => ff.facilities.name) || [],
+      rating: 4.8,
+      indoor: true
+    }));
+    setCourts(mappedCourts);
+  }
+}, [bookingData]);
   // Reset selection ketika date berubah
   useEffect(() => {
     setSelectedTimeSlots([]);
@@ -578,61 +573,39 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
 
         <div className="calendar-container">
           <div className="calendar-grid">
-    
-
-        {/* Grid tanggal - DI TENGAH SEMPURNA */}
-        <div className="dates-grid">
-          {availableDates.map((dateObj, index) => {
-            // Debug: console log untuk memastikan tanggal benar
-            const handleDateClick = () => {
-              if (dateObj.isCurrentMonth && !dateObj.isPast) {
-                console.log('Tanggal dipilih:', dateObj.date, 'Display:', dateObj.display);
-                setSelectedDate(dateObj.date);
-              }
-            };
-            return (
-               <button
-              key={`${dateObj.date}-${index}`}
-              className={`date-cell ${
-                !dateObj.isCurrentMonth ? 'other-month' : ''
-              } ${dateObj.isToday ? 'today' : ''} ${
-                selectedDate === dateObj.date ? 'selected' : ''
-              } ${dateObj.isPast ? 'past-date' : ''}`}
-              onClick={handleDateClick}
-              disabled={!dateObj.isCurrentMonth || dateObj.isPast}
-              title={dateObj.date} // Tooltip untuk debugging
-            >
-              <div className="date-number">{dateObj.display}</div>
-              <div className="day-name">{dateObj.dayName}</div>
-              {dateObj.isToday && <div className="today-indicator">Hari ini</div>}
-              {dateObj.isPast && <div className="past-indicator">⛔</div>}
-            </button>
-          );
-        })}
+            <div className="dates-grid">
+              {availableDates.map((dateObj, index) => {
+                const handleDateClick = () => {
+                  if (dateObj.isCurrentMonth && !dateObj.isPast) {
+                    setSelectedDate(dateObj.date);
+                  }
+                };
+                return (
+                  <button
+                    key={`${dateObj.date}-${index}`}
+                    className={`date-cell ${!dateObj.isCurrentMonth ? 'other-month' : ''} ${dateObj.isToday ? 'today' : ''} ${selectedDate === dateObj.date ? 'selected' : ''} ${dateObj.isPast ? 'past-date' : ''}`}
+                    onClick={handleDateClick}
+                    disabled={!dateObj.isCurrentMonth || dateObj.isPast}
+                    title={dateObj.date}
+                  >
+                    <div className="date-number">{dateObj.display}</div>
+                    <div className="day-name">{dateObj.dayName}</div>
+                    {dateObj.isToday && <div className="today-indicator">Hari ini</div>}
+                    {dateObj.isPast && <div className="past-indicator">⛔</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
       {selectedDate && (
         <div className="courts-section">
           <h3>🏟️ Pilih Lapangan Tersedia</h3>
-          <p className="section-subtitle">Tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}</p>
+          <p className="section-subtitle">Tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
-          {/* Debug info - bisa dihapus setelah testing */}
-          <div style={{ 
-            background: '#f0f8ff', 
-            padding: '10px', 
-            borderRadius: '8px', 
-            marginBottom: '15px',
-            fontSize: '0.9rem',
-            color: '#666'
-          }}>
+          <div style={{ background: '#f0f8ff', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', color: '#666' }}>
             <strong>Debug Info:</strong> Selected Date: {selectedDate}
           </div>
           
@@ -746,7 +719,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
         <div className="time-selection-header">
           <h2 className="time-selection-title">🕐 Pilih Waktu Booking</h2>
           
-          {/* Tampilkan pilihan berulang */}
           <div className="repeat-booking-section">
             <h3>🔄 Pemesanan Berulang</h3>
             <div className="repeat-options">
@@ -821,12 +793,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
             <div className="summary-item-large">
               <span className="summary-label">Tanggal:</span>
               <span className="summary-value">
-                {new Date(selectedDate).toLocaleDateString('id-ID', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+                {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
             <div className="summary-item-large">
@@ -839,7 +806,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
             </div>
           </div>
           
-          {/* Tombol untuk pilih rentang waktu */}
           <div className="time-range-selection">
             <h4>⏳ Pilih Rentang Waktu (Opsional)</h4>
             <div className="range-selection-buttons">
@@ -870,7 +836,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
             </div>
           </div>
           
-          {/* Tampilkan slot yang sudah dipilih */}
           {selectedTimeSlots.length > 0 && (
             <div className="selected-slots-preview">
               <h4>✅ Slot Waktu Dipilih ({selectedTimeSlots.length} slot):</h4>
@@ -902,16 +867,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
           <div className="time-slots-grid-ordered">
             {timeSlots.map(time => {
               const isAvailable = isTimeSlotAvailable(selectedCourt, time);
-              const isSelected = selectedTimeSlots.some(slot => 
-                slot.date === selectedDate && slot.time === time
-              );
+              const isSelected = selectedTimeSlots.some(slot => slot.date === selectedDate && slot.time === time);
               const isPast = isTimeInPast(selectedDate, time);
               
               return (
                 <button
                   key={time}
-                  className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${
-                    !isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
+                  className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${!isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
                   onClick={() => isAvailable && !isPast && toggleTimeSlot(time)}
                   disabled={!isAvailable || isPast}
                 >
@@ -953,10 +915,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
   };
 
   // === Handler Pembayaran ===
-  const handlePayment = () => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const handlePayment = async () => {
+    const localUser = JSON.parse(localStorage.getItem('user') || 'null');
 
-    if (!user) {
+    if (!localUser) {
       const bookingData = {
         selectedDate,
         selectedTimeSlots,
@@ -965,34 +927,20 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
         bookingRepeat,
         repeatWeeks,
         repeatMonths,
-        step: 3, // Simpan step terakhir
+        step: 3,
         timestamp: new Date().toISOString()
       };
-
       sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
-
-      // Redirect ke halaman login dengan state
-      navigate('/auth', { 
-        state: { 
-          redirectPath: '/booking',
-          message: 'Silakan login untuk melanjutkan pembayaran'
-        }
-      });
+      navigate('/auth', { state: { redirectPath: '/booking', message: 'Silakan login untuk melanjutkan pembayaran' } });
       return;
     }
 
-    // Jika user sudah login, lanjut ke pembayaran
     const allBookings = generateRepeatBookings();
     const selectedCourtData = courts.find(c => c.id === selectedCourt);
-    
-    // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    
-    // Calculate cancellation deadline (15 minutes from now)
     const cancelDeadline = new Date();
     cancelDeadline.setMinutes(cancelDeadline.getMinutes() + 15);
-    
-    // Create booking records
+
     const bookingRecords: BookingItem[] = allBookings.map((slot, index) => ({
       id: `booking-${Date.now()}-${index}`,
       courtId: selectedCourt,
@@ -1010,20 +958,49 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
       createdAt: new Date().toISOString(),
       canCancelUntil: cancelDeadline.toISOString()
     }));
-    
-    // Save to localStorage (simulate database)
-    const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-    const updatedBookings = [...existingBookings, ...bookingRecords];
-    localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
-    
-    // Navigate to bookings page
-    alert(`Pembayaran berhasil! ${allBookings.length} booking telah dibuat.`);
-    navigate('/my-bookings');
+
+    // Try to create bookings via REST backend first
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookings: bookingRecords, userId: localUser.id })
+      });
+      if (!res.ok) throw new Error('Backend booking creation failed');
+      const result = await res.json();
+      alert(`Pembayaran berhasil! ${allBookings.length} booking telah dibuat.`);
+      navigate('/my-bookings');
+      return;
+    } catch (err) {
+      // GraphQL fallback
+      try {
+        const gRes = await fetch('/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `mutation ($input: [CreateBookingInput!]!) { createBookings(input: $input) { id } }`,
+            variables: { input: bookingRecords.map(b => ({ ...b, userId: localUser.id })) }
+          })
+        });
+        const gJson = await gRes.json();
+        if (gJson.errors) throw new Error('GraphQL create failed');
+        alert(`Pembayaran berhasil! ${allBookings.length} booking telah dibuat.`);
+        navigate('/my-bookings');
+        return;
+      } catch (gErr) {
+        // Final fallback: localStorage
+        const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+        const updatedBookings = [...existingBookings, ...bookingRecords];
+        localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
+        alert(`Pembayaran (lokal) berhasil! ${allBookings.length} booking telah dibuat (offline).`);
+        navigate('/my-bookings');
+        return;
+      }
+    }
   };
 
   // Step 3: Konfirmasi & Pembayaran
   const renderStep3 = () => {
-    // Check if user is logged in
     if (!user) {
       return (
         <div className="booking-step">
@@ -1065,7 +1042,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
       );
     }
 
-    // Original payment UI if user is logged in
     const selectedCourtData = courts.find(c => c.id === selectedCourt);
     const allBookings = generateRepeatBookings();
     const totalPrice = calculateTotalPrice();
@@ -1110,7 +1086,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                 <strong>{allBookings.length} slot</strong>
               </div>
               
-              {/* List semua slot waktu */}
               <div className="detail-item-full">
                 <span>Detail Slot Waktu:</span>
                 <div className="time-slots-details">
@@ -1118,11 +1093,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                     <div key={index} className="slot-detail-item">
                       <span>Slot {index + 1}:</span>
                       <span>
-                        {new Date(slot.date).toLocaleDateString('id-ID', { 
-                          weekday: 'short', 
-                          day: 'numeric',
-                          month: 'short'
-                        })} • {slot.time}:00 - {parseInt(slot.time) + 1}:00
+                        {new Date(slot.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })} • {slot.time}:00 - {parseInt(slot.time) + 1}:00
                       </span>
                     </div>
                   ))}
@@ -1211,7 +1182,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
             style={{ padding: '12px 32px', fontSize: '1.1rem' }}
             onClick={handlePayment}
           >
-            🎯 Konfirmasi & Bayar (Rp {totalPrice.toLocaleString()})
+            🎯 Konfirmasi & Bayar (Rp {calculateTotalPrice().toLocaleString()})
           </button>
         </div>
       </div>
@@ -1220,12 +1191,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
 
   return (
     <div className="booking-page">
-      {/* Debug banner to check rendering */}
       <div style={{ background: '#ffefc2', padding: '10px', borderRadius: 8, marginBottom: 12, color: '#333', textAlign: 'center' }}>
         DEBUG: BookingPage component mounted
       </div>
       
-      {/* Progress Steps - CENTERED */}
       <div className="booking-header">
         <div className="booking-title-section">
           <h1 className="booking-main-title">🏀 Booking Lapangan</h1>
@@ -1248,7 +1217,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="booking-content">
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}

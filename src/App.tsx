@@ -1,4 +1,3 @@
-// src/App.tsx - Perbaikan pada bagian MyBookingsPage
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
