@@ -1,0 +1,36 @@
+/* Styling untuk Dropdown Profil di Header */
+.user-dropdown-menu {
+  position: absolute;
+  top: 50px; /* Jarak dari tombol */
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  min-width: 180px;
+  z-index: 1000;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-item {
+  padding: 12px 16px;
+  color: #333 !important; /* Warna teks item */
+  text-decoration: none;
+  text-align: left;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.logout-btn {
+  border-top: 1px solid #eee !important;
+  color: #e74c3c !important; /* Warna merah untuk logout */
+  font-weight: bold;
+}

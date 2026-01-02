@@ -1,5 +1,7 @@
 // src/components/auth/LoginForm.tsx
 import React, { useState, useEffect } from 'react';
+import { useMutation } from '@apollo/client';
+import { LOGIN_MUTATION } from '../../graphql/queries';
 import '../../styles/AuthForms.css';
 
 interface LoginFormProps {
@@ -12,50 +14,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, initialEmail }) => {
     email: initialEmail || '',
     password: ''
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-   // Mock credentials untuk testing - AUTO DETECT ROLE BERDASARKAN EMAIL
-  const mockUsers = [
-    // Admin
-    { 
-      email: 'admin@courtly.com', 
-      password: 'admin123', 
-      role: 'admin',
-      name: 'Admin Courtly',
-      id: 'admin-001',
-      permissions: ['manage_users', 'manage_venues', 'view_reports']
-    },
-    // Mitra Lapangan
-    { 
-      email: 'mitra@courtly.com', 
-      password: 'mitra123', 
-      role: 'vendor',
-      name: 'Mitra Lapangan',
-      id: 'vendor-001',
-      venueId: 'venue-001',
-      venueName: 'GOR Sidoarjo Sport Center',
-      phone: '(031) 8901234'
-    },
-    // User Biasa
-    { 
-      email: 'user@courtly.com', 
-      password: 'user123', 
-      role: 'user',
-      name: 'John Doe',
-      id: 'user-001',
-      phone: '081234567890'
-    },
-    // User lain untuk testing
-    { 
-      email: 'customer@gmail.com', 
-      password: '123456', 
-      role: 'user',
-      name: 'Customer Test',
-      id: 'user-002',
-      phone: '081234567891'
-    }
-  ];
+  // 1. Kunci Perbaikan: Jangan pakai onCompleted di sini agar tidak panggil onSuccess 2x
+  const [login, { loading }] = useMutation(LOGIN_MUTATION);
 
   useEffect(() => {
     if (initialEmail) {
@@ -65,68 +27,31 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, initialEmail }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
   };
 
+  // 2. HANYA GUNAKAN SATU handleSubmit (Hapus versi mock data)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Cari user berdasarkan email
-      const user = mockUsers.find(u => u.email === formData.email);
-      
-      if (!user) {
-        throw new Error('Email tidak terdaftar');
-      }
+      // Jalankan mutasi login
+      const result = await login({
+        variables: { 
+          email: formData.email, 
+          password: formData.password 
+        }
+      });
 
-      // Validasi password
-      if (formData.password !== user.password) {
-        throw new Error('Password salah');
+      // Ambil data dari hasil login (berisi token dan user)
+      if (result.data?.login) {
+        onSuccess(result.data.login); 
       }
-
-      // Buat user data berdasarkan role
-      let userData;
-      if (user.role === 'admin') {
-        userData = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: 'admin',
-          permissions: user.permissions
-        };
-      } else if (user.role === 'vendor') {
-        userData = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: 'vendor',
-          venueId: user.venueId,
-          venueName: user.venueName,
-          phone: user.phone
-        };
-      } else {
-        userData = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: 'user',
-          phone: user.phone
-        };
-      }
-      
-      onSuccess(userData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat login');
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err.message || 'Email atau password salah');
     }
   };
 
@@ -195,7 +120,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, initialEmail }) => {
         {loading ? (
           <>
             <span className="loading"></span>
-            Memproses...
+            Mempro ses...
           </>
         ) : (
           'Masuk ke Akun'

@@ -28,34 +28,48 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
     }
   }, [searchParams]);
 
-  const handleAuthSuccess = (userData: any) => {
-    onSuccess(userData);
+  const handleAuthSuccess = (loginData: any) => {
+    console.log("Data yang diterima AuthPage:", loginData);
+    // 1. Ekstrak data dari loginData agar bisa dipakai
+    // loginData biasanya berbentuk { user: {...}, token: "..." }
+    const user = loginData.user;
+    const token = loginData.token;
+
+    // 2. Simpan token ke localStorage (PENTING untuk persistent login)
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+
+    // 3. Lapor ke App.tsx (Gunakan variabel 'user' yang baru dibuat di atas)
+    onSuccess(user); 
+
     toast.showToast('Login berhasil', 'success');
     
-    // Cek apakah ada pending booking
+    const params = new URLSearchParams(window.location.search);
+    const redirectTo = params.get('redirect');
     const pendingBooking = sessionStorage.getItem('pendingBooking');
 
-    // Redirect berdasarkan role
+    // 4. Proses Navigasi/Redirect
     setTimeout(() => {
-      if (pendingBooking) {
-        // Parse dan redirect ke booking page dengan data yang disimpan
+      if (pendingBooking && user?.role === 'penyewa') {
         const bookingData = JSON.parse(pendingBooking);
+        sessionStorage.removeItem('pendingBooking'); // Hapus setelah diambil
         
-        // Redirect ke booking page dengan state
         navigate('/booking', { 
           state: { 
-            restoreBooking: true,
-            bookingData: bookingData
+            restoreBooking: true, 
+            bookingData: bookingData 
           }
         });
-        
-        // Hapus dari sessionStorage
-        sessionStorage.removeItem('pendingBooking');
-      } else if (userData.role === 'admin') {
+      } 
+      // Gunakan 'user.role' (sesuai variabel yang kita buat di langkah 1)
+      else if (user?.role === 'admin') {
         navigate('/admin/dashboard');
-      } else if (userData.role === 'vendor') {
+      } 
+      else if (user?.role === 'mitra') {
         navigate('/partner/dashboard');
-      } else {
+      } 
+      else {
         navigate(redirectPath || '/');
       }
     }, 500);

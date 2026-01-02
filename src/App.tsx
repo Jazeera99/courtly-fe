@@ -1,4 +1,3 @@
-// src/App.tsx - Perbaikan pada bagian MyBookingsPage
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
@@ -31,7 +30,7 @@ import MitraSchedule from './pages/mitra/Schedule';
 import MitraRevenue from './pages/mitra/Revenue';
 import MitraProfile from './pages/mitra/Profile';
 
-type UserRole = 'guest' | 'user' | 'vendor' | 'admin';
+type UserRole = 'guest' | 'penyewa' | 'mitra' | 'admin';
 
 interface User {
   id: string;
@@ -45,20 +44,19 @@ interface User {
 }
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string>('guest');
   const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
 
   // Load user from localStorage on initial render
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
-      }
+    const token = localStorage.getItem('token');
+    if (savedUser && token) {
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      setUserRole(parsedUser.role || 'user'); 
     }
   }, []);
 
@@ -74,7 +72,14 @@ function App() {
       venueName: userData.venueName
     };
     setUser(userObj);
+    setUserRole(userData.role || 'user');
+
+    // 2. Simpan ke LocalStorage (Agar kalau refresh tidak hilang)
     localStorage.setItem('user', JSON.stringify(userObj));
+    // Simpan token juga jika ada di userData
+    if (userData.token) {
+      localStorage.setItem('token', userData.token);
+    }
   };
 
   const handleLogout = () => {
@@ -133,7 +138,7 @@ function App() {
 
   // Layout Route untuk Mitra (tanpa Header global)
   const MitraLayoutRoute = ({ children }: { children: React.ReactNode }) => {
-    if (!user || user.role !== 'vendor') {
+    if (!user || user.role !== 'mitra') {
       return <Navigate to="/auth?mode=login" replace />;
     }
     return children;
@@ -168,7 +173,7 @@ function App() {
             
             {/* MyBookingsPage - PERHATIAN: Pastikan path ini benar */}
             <Route path="/my-bookings" element={
-              <ProtectedRoute allowedRoles={['user']}>
+              <ProtectedRoute allowedRoles={['penyewa']}>
                 <MyBookingsPage />
               </ProtectedRoute>
             } />
@@ -176,7 +181,7 @@ function App() {
             <Route 
               path="/profile" 
               element={
-                <ProtectedRoute allowedRoles={['user', 'vendor', 'admin']}>
+                <ProtectedRoute allowedRoles={['penyewa', 'mitra', 'admin']}>
                   <ProfilePage user={user} />
                   
                 </ProtectedRoute>

@@ -1,13 +1,12 @@
 /* src/components/Auth/AuthPage.css */
 .auth-page {
   /* full-bleed background inside a centered container */
-  position: fixed;
   top: 100px;
   left: 0;
   width: 100%;
   height: calc(100% - 100px);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  overflow-y: auto;
+      /* min-height: 100%; */
+  background: linear-gradient(to bottom right, #6366f1, #a855f7);
 }
 
 .auth-header {

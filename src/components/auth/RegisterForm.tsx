@@ -1,5 +1,6 @@
-// src/components/auth/RegisterForm.tsx
 import React, { useState } from 'react';
+import { useMutation } from '@apollo/client';
+import { REGISTER_MUTATION } from '../../graphql/queries';
 import '../../styles/AuthForms.css';
 
 interface RegisterFormProps {
@@ -16,8 +17,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'use
     confirmPassword: '',
     userType: 'user' as 'user' | 'vendor'
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 1. Integrasi Apollo Mutation
+  const [register, { loading }] = useMutation(REGISTER_MUTATION, {
+    onCompleted: (data) => {
+      // Jika berhasil, simpan token dan panggil onSuccess
+      const { token, user } = data.register;
+      localStorage.setItem('token', token);
+      onSuccess(user);
+    },
+    onError: (err) => {
+      // Jika error dari server (misal: email sudah ada)
+      setError(err.message);
+    }
+  });
 
   // Jika bukan user biasa, redirect ke login
   if (loginType !== 'user') {
@@ -27,7 +41,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'use
           <h3>⛔ Pendaftaran Dibatasi</h3>
           <p>
             Pendaftaran akun {loginType === 'admin' ? 'admin' : 'mitra lapangan'} tidak tersedia untuk publik.
-            Silakan hubungi administrator sistem untuk mendapatkan akses.
           </p>
         </div>
       </div>
@@ -67,26 +80,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'use
     
     if (!validateForm()) return;
 
-    setLoading(true);
     setError('');
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const userData = {
-        id: 'new-user-' + Date.now(),
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.userType
-      };
-      
-      onSuccess(userData);
-    } catch (err) {
-      setError('Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
-    } finally {
-      setLoading(false);
-    }
+    // 2. Panggil fungsi register dari Apollo
+    register({
+      variables: {
+        input: {
+          name: formData.fullName, // Kita petakan fullName ke 'name' sesuai backend
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone
+        }
+      }
+    });
   };
 
   return (
@@ -198,12 +204,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'use
       <button 
         type="submit" 
         className="auth-submit-btn"
-        disabled={loading || !formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword}
+        disabled={loading} // loading otomatis dari Apollo
       >
         {loading ? (
           <>
             <span className="loading"></span>
-            Membuat Akun...
+            Memproses...
           </>
         ) : (
           'Buat Akun Baru'
