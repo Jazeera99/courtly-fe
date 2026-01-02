@@ -5,6 +5,9 @@ import { CREATE_RESERVATION_DRAFT, MUTATION_CONFIRM } from '../graphql/mutations
 import { useMutation } from '@apollo/client';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_BOOKING_DATA } from '../graphql/queries';
+import { CREATE_RESERVATION_DRAFT, MUTATION_CONFIRM } from '../graphql/mutations';
 import '../styles/BookingPage.css';
 
 interface Court {
@@ -138,6 +141,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     }
   
     return dates;
+    return dates;
   };
 
   const availableDates = getDatesForMonth(currentMonth);
@@ -184,13 +188,24 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     const slotDateTime = new Date(selectedDate);
     slotDateTime.setHours(hours, 0, 0, 0);
     return slotDateTime < now;
+    if (!selectedDate) return false;
+    const now = new Date();
+    const [hours] = time.split(':').map(Number);
+    const slotDateTime = new Date(selectedDate);
+    slotDateTime.setHours(hours, 0, 0, 0);
+    return slotDateTime < now;
   };
 
   // Fallback generator in case backend not available
   const generateBookedSlots = (courtIds: string[] = ['1','2','3','4']): TimeSlot[] => {
+  // Fallback generator in case backend not available
+  const generateBookedSlots = (courtIds: string[] = ['1','2','3','4']): TimeSlot[] => {
     const booked: TimeSlot[] = [];
     const courtsToBook = courtIds;
+    const courtsToBook = courtIds;
     courtsToBook.forEach(courtId => {
+      const shuffled = [...timeSlots].sort(() => 0.5 - Math.random()).slice(0, 3);
+      shuffled.forEach(time => {
       const shuffled = [...timeSlots].sort(() => 0.5 - Math.random()).slice(0, 3);
       shuffled.forEach(time => {
         booked.push({ time, available: false, courtId });
@@ -240,13 +255,26 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     const matchesSearch = court.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          court.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          court.location?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = court.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         court.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         court.location?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSport = sportFilter === 'all' || court.sport === sportFilter;
-    const matchesPrice = priceFilter === 'all' || 
+    const matchesPrice = priceFilter === 'all' ||
                         (priceFilter === 'low' && court.price < 100000) ||
                         (priceFilter === 'medium' && court.price >= 100000 && court.price <= 200000) ||
                         (priceFilter === 'high' && court.price > 200000);
-    
+
     return matchesSearch && matchesSport && matchesPrice;
+  });
+
+  // Debug logging
+  console.log('BookingPage Debug:', {
+    selectedDate,
+    loadingCourts,
+    courtsError,
+    bookingData,
+    courts: courts.length,
+    filteredCourts: filteredCourts.length
   });
 
   // Cek ketersediaan time slot untuk court tertentu
@@ -628,12 +656,40 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
           </div>
         </div>
       </div>
+            <div className="dates-grid">
+              {availableDates.map((dateObj, index) => {
+                const handleDateClick = () => {
+                  if (dateObj.isCurrentMonth && !dateObj.isPast) {
+                    setSelectedDate(dateObj.date);
+                  }
+                };
+                return (
+                  <button
+                    key={`${dateObj.date}-${index}`}
+                    className={`date-cell ${!dateObj.isCurrentMonth ? 'other-month' : ''} ${dateObj.isToday ? 'today' : ''} ${selectedDate === dateObj.date ? 'selected' : ''} ${dateObj.isPast ? 'past-date' : ''}`}
+                    onClick={handleDateClick}
+                    disabled={!dateObj.isCurrentMonth || dateObj.isPast}
+                    title={dateObj.date}
+                  >
+                    <div className="date-number">{dateObj.display}</div>
+                    <div className="day-name">{dateObj.dayName}</div>
+                    {dateObj.isToday && <div className="today-indicator">Hari ini</div>}
+                    {dateObj.isPast && <div className="past-indicator">⛔</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {selectedDate && (
         <div className="courts-section">
           <h3>🏟️ Pilih Lapangan Tersedia</h3>
           <p className="section-subtitle">Tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="section-subtitle">Tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
+          <div style={{ background: '#f0f8ff', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', color: '#666' }}>
           <div style={{ background: '#f0f8ff', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', color: '#666' }}>
             <strong>Debug Info:</strong> Selected Date: {selectedDate}
           </div>
@@ -836,6 +892,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
               <span className="summary-label">Tanggal:</span>
               <span className="summary-value">
                 {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
             <div className="summary-item-large">
@@ -910,11 +967,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
             {timeSlots.map(time => {
               const isAvailable = isTimeSlotAvailable(selectedCourt, time);
               const isSelected = selectedTimeSlots.some(slot => slot.date === selectedDate && slot.time === time);
+              const isSelected = selectedTimeSlots.some(slot => slot.date === selectedDate && slot.time === time);
               const isPast = isTimeInPast(selectedDate, time);
               
               return (
                 <button
                   key={time}
+                  className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${!isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
                   className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${!isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
                   onClick={() => isAvailable && !isPast && toggleTimeSlot(time)}
                   disabled={!isAvailable || isPast}
@@ -961,7 +1020,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
     // CEK LOGIN (Tetap pertahankan logika login kamu)
     const user = JSON.parse(localStorage.getItem('user') || 'null');
 
-    if (!user) {
+    if (!localUser) {
       const bookingData = {
         selectedDate,
         selectedTimeSlots,
@@ -1111,6 +1170,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user }) => {
                     <div key={index} className="slot-detail-item">
                       <span>Slot {index + 1}:</span>
                       <span>
+                        {new Date(slot.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })} • {slot.time}:00 - {parseInt(slot.time) + 1}:00
                         {new Date(slot.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })} • {slot.time}:00 - {parseInt(slot.time) + 1}:00
                       </span>
                     </div>

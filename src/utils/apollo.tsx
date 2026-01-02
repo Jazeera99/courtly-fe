@@ -11,7 +11,11 @@ const authLink = setContext((_, { headers }) => {
   return {
     headers: {
       ...headers,
+<<<<<<< HEAD
       Authorization: token ? `Bearer ${token}` : '',
+=======
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+>>>>>>> 1ba3cfca2fc41e7977365978cb9f72301c8ca46c
     },
   };
 });
