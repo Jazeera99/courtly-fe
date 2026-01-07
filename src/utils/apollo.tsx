@@ -7,15 +7,26 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('token');
+  // const userJson = localStorage.getItem('user');
+  
+  // if (!userJson) {
+  //   console.warn("DEBUG: Tidak ada data 'user' di localStorage!");
+  //   return { headers };
+  // }
+
+  // Ambil data user
+  const userJson = localStorage.getItem('user');
+  const user = userJson ? JSON.parse(userJson) : null;
+
+  // CARA AMBIL TOKEN (Cek di dalam objek user ATAU cek kunci 'token' langsung)
+  const token = user?.token || localStorage.getItem('token');
+
+  console.log("Token yang dikirim ke server:", token ? "Ada (Terdeteksi)" : "KOSONG/Undefined");
+
   return {
     headers: {
       ...headers,
-<<<<<<< HEAD
-      Authorization: token ? `Bearer ${token}` : '',
-=======
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
->>>>>>> 1ba3cfca2fc41e7977365978cb9f72301c8ca46c
+      authorization: token ? `Bearer ${token}` : '',
     },
   };
 });

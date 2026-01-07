@@ -35,15 +35,32 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
     const user = loginData.user;
     const token = loginData.token;
 
-    // 2. Simpan token ke localStorage (PENTING untuk persistent login)
-    if (token) {
-      localStorage.setItem('token', token);
-    }
+    // 2. SATUKAN token ke dalam objek user agar tidak terpisah
+    const userDataToSave = {
+      ...user,
+      token: token // Kita masukkan token ke dalam sini
+    };
 
-    // 3. Lapor ke App.tsx (Gunakan variabel 'user' yang baru dibuat di atas)
-    onSuccess(user); 
+    // 3. Simpan SEKALIGUS ke localStorage dengan kunci 'user'
+    localStorage.setItem('user', JSON.stringify(userDataToSave));
+    
+    // Opsi tambahan: tetap simpan kunci 'token' jika ada komponen lain yang butuh
+    localStorage.setItem('token', token); 
+
+    // 4. Lapor ke App.tsx dengan data yang sudah lengkap ada tokennya
+    onSuccess(userDataToSave); 
 
     toast.showToast('Login berhasil', 'success');
+
+    // // 2. Simpan token ke localStorage (PENTING untuk persistent login)
+    // if (token) {
+    //   localStorage.setItem('token', token);
+    // }
+
+    // // 3. Lapor ke App.tsx (Gunakan variabel 'user' yang baru dibuat di atas)
+    // onSuccess(user); 
+
+    // toast.showToast('Login berhasil', 'success');
     
     const params = new URLSearchParams(window.location.search);
     const redirectTo = params.get('redirect');

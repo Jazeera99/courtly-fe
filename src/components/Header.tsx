@@ -42,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({
       { path: '/booking', label: 'Lapangan', icon: '📅' },
     ];
 
-    if (userRole === 'user') {
+    if (userRole === 'penyewa') {
       return [...baseLinks, 
         { path: '/my-bookings', label: 'Booking Saya', icon: '📋' },
       ];

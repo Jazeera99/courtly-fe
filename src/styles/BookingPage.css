@@ -2238,3 +2238,106 @@
   font-size: 0.8rem;
   margin-top: 5px;
 }
+
+/* Container Step 3 */
+.confirmation-grid {
+  display: grid;
+  /* Kita buat perbandingan jauh lebih besar: 2.5 bagian untuk Detail, 1 bagian untuk Ringkasan */
+  grid-template-columns: 2.5fr 1.6fr; 
+  /* Perkecil gap agar ruang kartu lebih luas */
+  gap: 24px; 
+  align-items: start;
+  width: 100%;
+  /* Opsional: Jika ingin seluruh grid lebih lebar di layar besar */
+  max-width: 1200px; 
+  margin: 0 auto;
+}
+
+/* Card Style (Putih Bersih) */
+.details-card, .payment-card {
+  background: #ffffff !important; /* Paksa jadi putih */
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); /* Shadow halus */
+  width: 90%;
+}
+
+.detail-header {
+  border-bottom: 2px dashed #edf2f7;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.detail-row .label { color: #718096; font-size: 0.9rem; }
+.detail-row .value { color: #2d3748; font-weight: 600; text-align: right; }
+
+/* Slot Jadwal */
+.time-slots-container {
+  margin-top: 15px;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #edf2f7;
+}
+
+.slot-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+}
+
+.slot-time-tag {
+  background: #4f46e5;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Payment Methods */
+.payment-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-option:hover { background: #f1f5f9; }
+.payment-option input { margin-right: 12px; }
+
+/* Notes Section */
+.notes-section { margin-top: 20px; border-top: 1px solid #edf2f7; padding-top: 20px; }
+.form-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-family: inherit;
+  resize: none;
+}
