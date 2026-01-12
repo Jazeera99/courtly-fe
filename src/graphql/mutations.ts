@@ -5,17 +5,20 @@ export const CREATE_RESERVATION_DRAFT = gql`
     $fieldId: ID!, 
     $date: Date!,
     $slots: [TimeRangeInput!]!,
+    $availabilityIds: [ID!]!,
     $recurring: RecurringInput
   ) {
     createReservationDraft(
       fieldId: $fieldId, 
       date: $date,
       slots: $slots, 
+      availabilityIds: $availabilityIds,
       recurring: $recurring
     ) {
       reservationId
       totalAmount
       expiresAt
+      timeSlots
     }
   }
 `;
@@ -26,6 +29,7 @@ export const MUTATION_CREATE_DRAFT = gql`
       reservationId
       totalAmount
       expiresAt
+      timeSlots 
     }
   }
 `;

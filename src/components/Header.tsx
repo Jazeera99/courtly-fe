@@ -1,6 +1,7 @@
 // src/components/Header/Header.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useApolloClient } from '@apollo/client';
 import '../App.css';
 import '../styles/Header.css';
 
@@ -65,10 +66,19 @@ const Header: React.FC<HeaderProps> = ({
     return baseLinks;
   };
 
-  const handleLogout = () => {
-    setUserMenuOpen(false);
-    onLogout();
-    navigate('/auth?mode=login');
+  const client = useApolloClient();
+
+  const handleLogout = async () => {
+    // 1. Hapus token dari storage
+    localStorage.removeItem('token'); 
+    
+    // 2. Reset Apollo Cache agar data user lama (Ziella) hilang total
+    await client.clearStore(); 
+
+    // 3. Arahkan ke halaman login
+    // Menggunakan window.location.href lebih disarankan untuk logout 
+    // agar seluruh state aplikasi ter-refresh bersih.
+    window.location.href = '/auth?mode=login';
   };
 
   return (

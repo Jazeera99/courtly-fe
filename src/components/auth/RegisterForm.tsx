@@ -5,7 +5,7 @@ import '../../styles/AuthForms.css';
 
 interface RegisterFormProps {
   onSuccess: (userData: any) => void;
-  loginType?: 'user' | 'admin' | 'partner';
+  loginType?: 'guest'| 'penyewa' | 'mitra' | 'admin';
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'user' }) => {
@@ -15,7 +15,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'use
     phone: '',
     password: '',
     confirmPassword: '',
-    userType: 'user' as 'user' | 'vendor'
+    userType: 'user' as 'penyewa' | 'vendor'
   });
   const [error, setError] = useState('');
 
@@ -82,14 +82,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loginType = 'use
 
     setError('');
 
-    // 2. Panggil fungsi register dari Apollo
+    const selectedRol = formData.userType === 'vendor' ? 'mitra' : 'penyewa';
+
+    // Panggil fungsi register dari Apollo
     register({
       variables: {
         input: {
           name: formData.fullName, // Kita petakan fullName ke 'name' sesuai backend
           email: formData.email,
           password: formData.password,
-          phone: formData.phone
+          phone: formData.phone,
+          role: selectedRol
         }
       }
     });

@@ -59,6 +59,7 @@ const VenueDetailPage: React.FC = () => {
     description: data.fieldDetail.description,
     location: `${data.fieldDetail.city}, ${data.fieldDetail.province}`,
     address: data.fieldDetail.full_address,
+    // phone: data.fieldDetail.phone || "Tidak ada nomor",
     // Ambil semua path gambar dari database
     images: data.fieldDetail.field_images?.length > 0 
       ? data.fieldDetail.field_images.map((img: any) => `http://localhost:4000${img.image_path}`)
@@ -213,12 +214,12 @@ const VenueDetailPage: React.FC = () => {
                 </div>
                 
                 <div className="contact-row">
-                  {venue.phone && (
+                  {/* {venue.phone && (
                     <div className="contact-item">
                       <span className="contact-icon">📞</span>
                       <span className="contact-text">{venue.phone}</span>
                     </div>
-                  )}
+                  )} */}
                   
                   {venue.operatingHours && (
                     <div className="contact-item">
@@ -243,7 +244,7 @@ const VenueDetailPage: React.FC = () => {
           <div className="venue-facilities-full">
             <h3>Fasilitas</h3>
             <div className="facilities-grid-full">
-              {venue.facilities.map((facility, index) => (
+              {venue.facilities.map((facility: string, index: number) => (
                 <div key={index} className="facility-item-full">
                   <span className="facility-check">✓</span>
                   <span>{facility}</span>

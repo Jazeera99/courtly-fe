@@ -1,6 +1,7 @@
 import { GraphQLScalarType, Kind, ValueNode } from 'graphql';
 import { useQuery } from '@apollo/client';
-import { GET_BOOKING_DATA } from '../graphql/queries';
+import { GET_BOOKING_DATA, GET_AVAILABLE_SLOTS } from '../graphql/queries';
+// import { GET_AVAILABLE_SLOTS, GET_BOOKING_DATA } from '../graphql/queries';
 import { CREATE_RESERVATION_DRAFT, MUTATION_CONFIRM } from '../graphql/mutations';
 import { useMutation } from '@apollo/client';
 import React, { useState, useEffect } from 'react';
@@ -23,9 +24,11 @@ interface Court {
 }
 
 interface TimeSlot {
+  availabilityId: string;
   time: string;
-  available: boolean;
-  courtId: string;
+  date: string;
+  available?: boolean;
+  courtId?: string;
 }
 
 interface BookingItem {
@@ -57,15 +60,22 @@ interface ReservationDraft {
   __typename?: string;
 }
 
+interface BookedSlot {
+  courtId: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
 const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedCourt, setSelectedCourt] = useState<string>('');
-  const [selectedTimeSlots, setSelectedTimeSlots] = useState<Array<{date: string, time: string}>>([]);
+
   const [bookingRepeat, setBookingRepeat] = useState<'none' | 'weekly' | 'monthly'>('none');
   const [repeatWeeks, setRepeatWeeks] = useState<number>(1);
   const [repeatMonths, setRepeatMonths] = useState<number>(1);
@@ -74,6 +84,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
   const [sportFilter, setSportFilter] = useState<string>('all');
   const [priceFilter, setPriceFilter] = useState<string>('all');
   const [step, setStep] = useState<number>(1);
+
   const [reservationInfo, setReservationInfo] = useState<ReservationDraft | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [createReservationDraft, { loading: creatingDraft }] = useMutation(CREATE_RESERVATION_DRAFT);
@@ -100,7 +111,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
 
   // Data from backend
   const [courts, setCourts] = useState<Court[]>([]);
-  const [bookedSlots, setBookedSlots] = useState<TimeSlot[]>([]);
+  // const [bookedSlots, setBookedSlots] = useState<TimeSlot[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
   // const [loadingCourts, setLoadingCourts] = useState<boolean>(false);
   const [loadingBooked, setLoadingBooked] = useState<boolean>(false);
 
@@ -122,6 +134,20 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
   useEffect(() => {
     console.log('selectedDate changed to:', selectedDate);
   }, [selectedDate]);
+
+  const venueIdFromUrl = searchParams.get('venueId');
+
+  useEffect(() => {
+    // Pesan dari App.tsx (setelah login)
+    const targetStep = location.state?.goToStep;
+    
+    if (targetStep) {
+      setStep(targetStep); 
+    } 
+    else if (venueIdFromUrl) {
+      setStep(2); // Paksa ke Step 2 jika ada ID Venue di link
+    }
+  }, [location.state, venueIdFromUrl]);
 
   // Calendar helper (unchanged)
   const getDatesForMonth = (yearMonthStr: string) => {
@@ -203,48 +229,107 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
   };
 
   const getSlotStatus = (courtId: string, time: string, date: string) => {
-    // Cari data di bookedSlots dari database
-    const slotData = bookedSlots.find(
-      slot => slot.courtId === courtId && slot.time === time
-    );
-
-    // LOGIKA STATUS:
-    // a. Cek Maintenance (Contoh: jika ada flag maintenance di data lapangan)
+    // Cek Maintenance
     const court = courts.find(c => c.id === courtId);
-    if (court?.description?.toLowerCase().includes('maintenance')) {
-       return 'MAINTENANCE';
-    }
+    if (court?.description?.toLowerCase().includes('maintenance')) return 'MAINTENANCE';
 
-    // b. Cek Masa Lalu
+    // Cek Masa Lalu (Waktu sudah lewat)
     if (isTimeInPast(date, time)) return 'PAST';
 
-    // c. Cek Penuh (Sudah dibooking & lunas)
-    const isBooked = bookedSlots.some(
-      slot => slot.courtId === courtId && slot.time === time && slot.date === date
-    );
-    if (isBooked) return 'FULL';
-    // if (slotData) {
-    //    // Di sini Anda bisa kembangkan: if (slotData.paymentStatus === 'paid') ...
-    //    return 'FULL';
-    // }
+    // Cek Penuh (Sudah ada di database bookedSlots)
+    const isBooked = bookedSlots.some((slot: BookedSlot) => {
+      if (slot.courtId !== courtId || slot.date !== date) return false;
 
-    // d. Cek Tidak Tersedia (Misal: Jam operasional 08:00 - 22:00)
+      // Ubah jam "17:00" menjadi angka 17 agar bisa dibandingkan
+      const currentHour = parseInt(time.split(':')[0]);
+      const getHour = (val: string) => {
+        if (!val) return 0; // Tambahkan pengaman jika nilai kosong
+        if (val.includes('T')) return new Date(val).getUTCHours();
+        return parseInt(val.split(':')[0]);
+      };
+
+      const startHour = getHour(slot.start_time);
+      const endHour = getHour(slot.end_time);
+      // const startHour = parseInt(slot.start_time.split(':')[0]);
+      // const endHour = parseInt(slot.end_time.split(':')[0]);
+
+      // Jika jam sekarang (misal 18) >= jam mulai (17) DAN jam sekarang < jam selesai (19)
+      // Maka jam 17 dan 18 akan otomatis FULL.
+      return currentHour >= startHour && currentHour < endHour;
+  });
+    // const isBooked = bookedSlots.some(
+    //   slot => slot.courtId === courtId && slot.time === time && slot.date === date
+    // );
+    if (isBooked) return 'FULL';
+
+    // Cek Jam Operasional (Contoh: Tutup jam 7 pagi dan 10 malam)
     const hour = parseInt(time);
-    if (hour < 7 || hour > 22) { // Contoh jam operasional
-       return 'UNAVAILABLE';
-    }
+    if (hour < 7 || hour > 22) return 'UNAVAILABLE';
 
     return 'AVAILABLE';
   };
 
+  // const getSlotStatus = (courtId: string, time: string, date: string) => {
+  //   // Cari data di bookedSlots dari database
+  //   const slotData = bookedSlots.find(
+  //     slot => slot.courtId === courtId && slot.time === time
+  //   );
+
+  //   // LOGIKA STATUS:
+  //   // a. Cek Maintenance (Contoh: jika ada flag maintenance di data lapangan)
+  //   const court = courts.find(c => c.id === courtId);
+  //   if (court?.description?.toLowerCase().includes('maintenance')) {
+  //      return 'MAINTENANCE';
+  //   }
+
+  //   // b. Cek Masa Lalu
+  //   if (isTimeInPast(date, time)) return 'PAST';
+
+  //   // c. Cek Penuh (Sudah dibooking & lunas)
+  //   const isBooked = bookedSlots.some(
+  //     slot => slot.courtId === courtId && slot.time === time && slot.date === date
+  //   );
+  //   if (isBooked) return 'FULL';
+  //   // if (slotData) {
+  //   //    // Di sini Anda bisa kembangkan: if (slotData.paymentStatus === 'paid') ...
+  //   //    return 'FULL';
+  //   // }
+
+  //   // d. Cek Tidak Tersedia (Misal: Jam operasional 08:00 - 22:00)
+  //   const hour = parseInt(time);
+  //   if (hour < 7 || hour > 22) { // Contoh jam operasional
+  //      return 'UNAVAILABLE';
+  //   }
+
+  //   return 'AVAILABLE';
+  // };
+
   // Fallback generator in case backend not available
+  // const generateBookedSlots = (courtIds: string[] = ['1','2','3','4']): TimeSlot[] => {
+  //   const booked: TimeSlot[] = [];
+  //   const courtsToBook = courtIds;
+  //   courtsToBook.forEach(courtId => {
+  //     const shuffled = [...timeSlots].sort(() => 0.5 - Math.random()).slice(0, 3);
+  //     shuffled.forEach(time => {
+  //       booked.push({ time, available: false, courtId });
+  //     });
+  //   });
+  //   return booked;
+  // };
+
   const generateBookedSlots = (courtIds: string[] = ['1','2','3','4']): TimeSlot[] => {
     const booked: TimeSlot[] = [];
-    const courtsToBook = courtIds;
-    courtsToBook.forEach(courtId => {
+    
+    courtIds.forEach(courtId => {
       const shuffled = [...timeSlots].sort(() => 0.5 - Math.random()).slice(0, 3);
       shuffled.forEach(time => {
-        booked.push({ time, available: false, courtId });
+        booked.push({ 
+          availabilityId: `temp-${courtId}-${time}`, // Tambahkan ID sementara
+          time, 
+          date: selectedDate, // Tambahkan tanggal
+          available: false, 
+          courtId 
+        });
       });
     });
     return booked;
@@ -254,6 +339,17 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
     variables: { date: selectedDate },
     skip: !selectedDate,
   });
+
+  const { data: slotsData, loading: loadingSlots } = useQuery(GET_AVAILABLE_SLOTS, {
+    variables: { 
+      fieldId: selectedCourt, 
+      date: selectedDate 
+    },
+    skip: !selectedCourt || !selectedDate,
+    fetchPolicy: "network-only"
+  });
+
+  const availableSlots = slotsData?.availableSlots || [];
 
   useEffect(() => {
   console.log("Cek data dari GraphQL:", bookingData);
@@ -311,39 +407,116 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
   };
 
   // Fungsi untuk menambah/menghapus slot waktu yang dipilih
-  const toggleTimeSlot = (time: string) => {
-    if (!selectedDate) return;
-    const existingIndex = selectedTimeSlots.findIndex(
-      slot => slot.date === selectedDate && slot.time === time
-    );
-    if (existingIndex >= 0) {
-      const newSlots = [...selectedTimeSlots];
-      newSlots.splice(existingIndex, 1);
-      setSelectedTimeSlots(newSlots);
-    } else {
-      setSelectedTimeSlots([...selectedTimeSlots, { date: selectedDate, time }]);
-    }
-  };
+      // Cek apakah slot ID ini sudah ada di daftar pilihan
+      // const exists = prev.find((s) => s.availabilityId === slot.id);
+      
+      // if (exists) {
+      //   // Jika sudah ada, hapus (unselect)
+      //   return prev.filter((s) => s.availabilityId !== slot.id);
+      // } else {
+      //   // Jika belum ada, tambahkan ke daftar
+      //   return [...prev, { 
+      //     availabilityId: slot.id, // ID database (BigInt/String)
+      //     time: slot.time,
+      //     date: selectedDate 
+      //   }];
+      // }
+  // const courtData = data?.fieldDetail; 
+
+  // const toggleTimeSlot = (slot: any) => {
+  //   const uniqueId = `${selectedDate}-${slot.start}`;
+
+  //   setSelectedTimeSlots((prev) => {
+  //     // Cek apakah slot ini sudah dipilih sebelumnya
+  //     const isAlreadySelected = prev.some((s) => s.uniqueId === uniqueId);
+
+  //     if (isAlreadySelected) {
+  //       // Jika sudah ada, hapus (unselect)
+  //       return prev.filter((s) => s.uniqueId !== uniqueId);
+  //     } else {
+  //       // Jika belum ada, tambahkan ke daftar pesanan
+  //       return [
+  //         ...prev,
+  //         {
+  //           ...slot,
+  //           uniqueId, // ID unik untuk UI
+  //           date: selectedDate, // Simpan tanggalnya juga!
+  //           price: courtData?.price // Simpan harga saat itu
+  //         },
+  //       ];
+  //     }
+  //   });
+    // const isSelected = selectedTimeSlots.some(s => s.id === slot.id);
+    // if (isSelected) {
+    //   setSelectedTimeSlots(selectedTimeSlots.filter(s => s.id !== slot.id));
+    // } else {
+    //   setSelectedTimeSlots([...selectedTimeSlots, slot]);
+    // }
+  // };
+  
+  // 1. Ambil data dari query (Gunakan nama yang konsisten, misal: slotsData)
+
+// 2. Definikan courtData SETELAH slotsData ada
+// Pakai slotsData karena di atas kamu menamainya slotsData
+const courtData = slotsData?.fieldDetail; 
+
+
 
   // Fungsi untuk pilih banyak waktu sekaligus
   const selectMultipleTimeSlots = (startTime: string, endTime: string) => {
-    if (!selectedDate) return;
+    if (!selectedDate || !slotsData) return;
+
     const startHour = parseInt(startTime.split(':')[0]);
     const endHour = parseInt(endTime.split(':')[0]);
+    
     const newSlots = [...selectedTimeSlots];
+
     for (let hour = startHour; hour < endHour; hour++) {
-      const time = `${hour.toString().padStart(2, '0')}:00`;
-      const alreadySelected = newSlots.some(
-        slot => slot.date === selectedDate && slot.time === time
+      const timeString = `${hour.toString().padStart(2, '0')}:00`;
+
+      // 1. CARI DATA ASLI DARI BACKEND untuk jam ini
+      const slotFromBackend = slotsData.availableSlots.find(
+        (s: any) => s.start === timeString
       );
-      const isAvailable = isTimeSlotAvailable(selectedCourt, time);
-      const isPast = isTimeInPast(selectedDate, time);
-      if (!alreadySelected && isAvailable && !isPast) {
-        newSlots.push({ date: selectedDate, time });
+
+      // 2. CEK VALIDASI
+      // Harus ada di backend, harus tersedia (available), dan belum pernah dipilih
+      if (slotFromBackend && slotFromBackend.available) {
+        const alreadySelected = newSlots.some(
+          (s) => s.availabilityId === slotFromBackend.id
+        );
+
+        if (!alreadySelected) {
+          // 3. MASUKKAN DATA LENGKAP (Garis orange hilang!)
+          newSlots.push({ 
+            availabilityId: slotFromBackend.id, 
+            time: timeString, 
+            date: selectedDate 
+          });
+        }
       }
     }
+
     setSelectedTimeSlots(newSlots);
   };
+  // const selectMultipleTimeSlots = (startTime: string, endTime: string) => {
+  //   if (!selectedDate) return;
+  //   const startHour = parseInt(startTime.split(':')[0]);
+  //   const endHour = parseInt(endTime.split(':')[0]);
+  //   const newSlots = [...selectedTimeSlots];
+  //   for (let hour = startHour; hour < endHour; hour++) {
+  //     const time = `${hour.toString().padStart(2, '0')}:00`;
+  //     const alreadySelected = newSlots.some(
+  //       slot => slot.date === selectedDate && slot.time === time
+  //     );
+  //     const isAvailable = isTimeSlotAvailable(selectedCourt, time);
+  //     const isPast = isTimeInPast(selectedDate, time);
+  //     if (!alreadySelected && isAvailable && !isPast) {
+  //       newSlots.push({ date: selectedDate, time });
+  //     }
+  //   }
+  //   setSelectedTimeSlots(newSlots);
+  // };
 
   // Fungsi untuk generate repeat bookings (mingguan/bulanan)
   const generateRepeatBookings = () => {
@@ -388,9 +561,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
     return pricePerHour * totalHours * totalDays;
   };
 
-  // 2. Fungsi Kirim Data ke Backend
+  // Fungsi Kirim Data ke Backend
   const handleConfirmBooking = async () => {
-    // 1. CEK DULU DI CONSOLE (PENTING!)
+    // CEK DULU DI CONSOLE (PENTING!)
     // Jika di console muncul 'Data Kosong', berarti masalahnya di state UI Anda
     console.log("ISI STATE SAAT INI:", { 
       lapangan: selectedCourt, 
@@ -405,19 +578,28 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
     const datesToSend = bookingType === 'single' ? [selectedDate] : multiDates;
 
     try {
-      // 2. KIRIM DENGAN STRING CASTING
+      // KIRIM DENGAN STRING CASTING
       const { data } = await createReservationDraft({
         variables: {
           fieldId: String(selectedCourt), 
-          slots: selectedSlots.map(s => ({ 
-            start: String(s), 
-            end: String(s) 
-          })),
+          // slots: selectedSlots.map(s => ({ 
+          //   start: String(s), 
+          //   end: String(s) 
+          // })),
+          slots: selectedTimeSlots.map(s => {
+            const startH = parseInt(s.split(':')[0]);
+            const endH = startH + 1;
+            return {
+              start: `${startH.toString().padStart(2, '0')}:00`,
+              end: `${endH.toString().padStart(2, '0')}:00`
+            };
+          }),
           recurring: {
             type: bookingType,
             dates: datesToSend,
             count: datesToSend.length
-          }
+          }, 
+          availabilityIds: selectedTimeSlots
         }
       });
 
@@ -520,11 +702,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
 }, [step, timeLeft]);
 
   // Gunakan useEffect untuk memicu Draft saat masuk Step 3
-  useEffect(() => {
-    if (step === 3 && selectedCourt && !reservationInfo) {
-      handleCreateDraft();
-    }
-  }, [step]);
+  // useEffect(() => {
+  //   if (step === 3 && selectedCourt && !reservationInfo) {
+  //     handleCreateDraft();
+  //   }
+  // }, [step]);
 
   const handleCreateDraft = async () => {
     try {
@@ -569,6 +751,16 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
     }
   };
 
+  const isSlotExpired = (date: string, time: string) => {
+  const now = new Date();
+  const selected = new Date(date);
+  // Asumsi format time adalah "HH:mm" (misal "08:00")
+  const [hours, minutes] = time.split(':').map(Number);
+  selected.setHours(hours, minutes, 0, 0);
+  
+  return selected < now;
+};
+
   const handleGoToPayment = async () => {
     const latestUser = userProp || JSON.parse(localStorage.getItem('user') || 'null');
     // Cek apakah user sudah login
@@ -608,14 +800,29 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
     // });
 
     try {
+      // --- LOGIKA PENENTU (Satu dan Banyak Tanggal) ---
+      // Jika user sedang di tab 'single', maka tanggalnya cuma [selectedDate]
+      // Jika user di tab 'weekly', maka tanggalnya adalah array multiDates
+      const isSingle = bookingType === 'single';
+      const finalDates = isSingle ? [selectedDate] : multiDates;
 
+      // DEBUG: Cek apakah availabilityId benar-benar ada
+      console.log("IDs yang dikirim:", selectedTimeSlots.map(slot => slot.availabilityId));
+
+      if (finalDates.length === 0 || !finalDates[0]) {
+        alert("Pilih tanggal terlebih dahulu!");
+        return;
+      }
       console.log("Mencoba membuat draft untuk Lapangan ID:", selectedCourt);
 
-      // 3. Jalankan mutasi GraphQL
+      
+      // Jalankan mutasi GraphQL
       const { data } = await createDraft({
         variables: {
           fieldId: String(selectedCourt),
-          date: selectedDate,
+          date: finalDates[0],
+          // date: selectedDate,
+          availabilityIds: selectedTimeSlots.map(slot => slot.availabilityId),
           slots: selectedTimeSlots.map(slot => {
             const startHour = parseInt(slot.time.split(':')[0]);
             return {
@@ -624,9 +831,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
             };
           }),
           recurring: {
-            type: bookingRepeat === 'none' ? 'SINGLE' : 'WEEKLY',
-            dates: bookingType === 'single' ? [selectedDate] : multiDates,
-            count: bookingType === 'single' ? 1 : multiDates.length
+            type: isSingle ? 'SINGLE' : 'WEEKLY',
+            dates: finalDates,
+            count: finalDates.length
+            // type: bookingRepeat === 'none' ? 'SINGLE' : 'WEEKLY',
+            // dates: bookingType === 'single' ? [selectedDate] : multiDates,
+            // count: bookingType === 'single' ? 1 : multiDates.length
           }
         }
       });
@@ -848,275 +1058,931 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
       )}
     </div>
   );
-  
 
-  // Step 2: Pilih Waktu dengan Multi Selection
-  const renderStep2 = () => {
-    const selectedCourtData = courts.find(c => c.id === selectedCourt);
-    const allBookings = generateRepeatBookings();
-    
-    return (
-      <div className="booking-step">
-        <div className="time-selection-header">
-          <h2 className="time-selection-title">🕐 Pilih Waktu Booking</h2>
-          
-          <div className="repeat-booking-section">
-          {/* --- TOMBOL NAVIGASI TIPE (BIRU JIKA AKTIF) --- */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
-            <button
-              onClick={() => { setBookingType('single'); setMultiDates([]); }}
-              style={{
-                padding: '10px 20px', borderRadius: '20px', border: '1px solid #007bff', cursor: 'pointer',
-                backgroundColor: bookingType === 'single' ? '#007bff' : '#fff',
-                color: bookingType === 'single' ? '#fff' : '#007bff',
-                fontWeight: 'bold'
-              }}
-            >
-              🚫 Sekali Pesan
-            </button>
-            <button
-              onClick={() => { setBookingType('weekly'); setMultiDates([]); }}
-              style={{
-                padding: '10px 20px', borderRadius: '20px', border: '1px solid #007bff', cursor: 'pointer',
-                backgroundColor: bookingType === 'weekly' ? '#007bff' : '#fff',
-                color: bookingType === 'weekly' ? '#fff' : '#007bff',
-                fontWeight: 'bold'
-              }}
-            >
-              📅 Pesanan Berulang
-            </button>
-            
+  // GANTI renderStep2 dengan ini:
+// Ganti fungsi renderStep2 dengan ini:
+const renderStep2 = () => {
+  const selectedCourtData = courts.find((c: any) => c.id === selectedCourt);
+  const availableSlots = slotsData?.availableSlots || [];
+
+  return (
+    <div className="booking-step">
+      {/* HEADER INFORMASI */}
+      <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '15px', marginBottom: '20px' }}>
+        <h3>📅 Pilih Tanggal & Waktu</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>Lapangan: <strong>{selectedCourtData?.name}</strong></p>
+            <p style={{ margin: '5px 0 0 0', color: '#666' }}>Harga: Rp {selectedCourtData?.price?.toLocaleString()}/jam</p>
           </div>
+          
+          {/* TOGGLE SINGLE/MULTI DATE */}
+          <div style={{ display: 'flex', gap: '10px', background: '#fff', padding: '8px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <button
+              onClick={() => { 
+                setBookingType('single'); 
+                setMultiDates([]);
+              }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: bookingType === 'single' ? '#007bff' : '#f1f5f9',
+                color: bookingType === 'single' ? '#fff' : '#64748b',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}
+            >
+              📅 Sekali Pesan
+            </button>
+            <button
+              onClick={() => { 
+                setBookingType('weekly');
+              }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: bookingType === 'weekly' ? '#007bff' : '#f1f5f9',
+                color: bookingType === 'weekly' ? '#fff' : '#64748b',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}
+            >
+              📆 Berulang
+            </button>
+          </div>
+        </div>
+      </div>
 
-          <div className="booking-card" style={{ padding: '20px', border: '1px solid #eee', borderRadius: '15px' }}>
+      {/* PILIH TANGGAL */}
+      <div style={{ marginBottom: '20px' }}>
+        {bookingType === 'single' ? (
+          <div>
+            <h4 style={{ marginBottom: '10px' }}>Pilih Tanggal Main:</h4>
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ 
+                width: '100%', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                border: '1px solid #ccc',
+                fontSize: '16px'
+              }}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+        ) : (
+          <div>
+            <h4 style={{ marginBottom: '10px' }}>Pilih Tanggal Berulang (Bisa pilih lebih dari satu):</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+              <input 
+                type="date" 
+                onChange={(e) => e.target.value && toggleMultiDate(e.target.value)}
+                style={{ 
+                  padding: '10px', 
+                  borderRadius: '8px', 
+                  border: '1px solid #ccc',
+                  flex: '1',
+                  minWidth: '200px'
+                }}
+                min={new Date().toISOString().split('T')[0]}
+              />
+              <button
+                onClick={() => {
+                  const dates = getNext7Days();
+                  setMultiDates(dates);
+                }}
+                style={{
+                  padding: '10px 15px',
+                  borderRadius: '8px',
+                  border: '1px solid #10b981',
+                  background: '#f0fdf4',
+                  color: '#065f46',
+                  cursor: 'pointer'
+                }}
+              >
+                + 7 Hari Kedepan
+              </button>
+            </div>
             
-            {/* --- KONDISI 1: SEKALI PESAN --- */}
-            {bookingType === 'single' && (
-              <div className="single-ui">
-                <h4 style={{ color: '#333' }}>📅 Pilih Tanggal Main</h4>
-                <input 
-                  type="date" 
-                  value={selectedDate} 
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  style={{ width: '100%', padding: '10px', marginTop: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
-                />
+            {/* DAFTAR TANGGAL TERPILIH */}
+            {multiDates.length > 0 && (
+              <div style={{ marginTop: '15px' }}>
+                <p style={{ marginBottom: '8px', fontWeight: 'bold' }}>
+                  Tanggal Terpilih ({multiDates.length}):
+                </p>
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '8px',
+                  maxHeight: '120px',
+                  overflowY: 'auto',
+                  padding: '10px',
+                  background: '#f8fafc',
+                  borderRadius: '8px'
+                }}>
+                  {multiDates.map(date => (
+                    <div 
+                      key={date} 
+                      style={{ 
+                        background: '#007bff', 
+                        color: '#fff', 
+                        padding: '8px 12px', 
+                        borderRadius: '20px', 
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      {new Date(date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      <button 
+                        onClick={() => toggleMultiDate(date)} 
+                        style={{ 
+                          background: 'none', 
+                          border: 'none', 
+                          color: '#fff', 
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          marginLeft: '5px'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-
-            {/* --- KONDISI 2: MINGGUAN --- */}
-            {bookingType === 'weekly' && (
-              <div className="weekly-ui">
-                <h4 style={{ color: '#007bff' }}>🚀 Paket Bebas</h4>
-                
-                <p><small>Pilih hari apa saja dalam seminggu:</small></p>
-                <input 
-                  type="date" 
-                  onChange={(e) => e.target.value && toggleMultiDate(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
-                />
-              </div>
-            )}
-
-        {/* --- TAGS TANGGAL (Hanya muncul jika bukan Single) --- */}
-        {bookingType !== 'single' && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '15px' }}>
-            {multiDates.map(d => (
-              <div key={d} style={{ background: '#007bff', color: '#fff', padding: '5px 12px', borderRadius: '20px', fontSize: '12px' }}>
-                {d} <span onClick={() => toggleMultiDate(d)} style={{ cursor: 'pointer', marginLeft: '5px' }}>×</span>
-              </div>
-            ))}
           </div>
         )}
-          </div>
+      </div>
+
+      {/* PILIH JAM */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0 }}>⏰ Slot Jam Tersedia</h3>
+          {bookingType === 'single' && selectedDate && (
+            <p style={{ margin: 0, color: '#666' }}>
+              {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          )}
         </div>
 
-
-        {/* Render Time Slots di bawahnya (berlaku untuk semua tanggal yang dipilih) */}
-        <div className="time-slots-section" style={{ marginTop: '20px' }}>
-          <h3>Pilih Jam</h3>
-          <p><small>*Jam yang dipilih akan diterapkan ke semua tanggal di atas</small></p>
-          {/* ... (Gunakan logika rendering slots yang sudah ada di file kamu) ... */}
-        </div>
-          
-          <div className="booking-summary-large">
-            <div className="summary-item-large">
-              <span className="summary-label">Lapangan:</span>
-              <span className="summary-value">{selectedCourtData?.name}</span>
-            </div>
-            <div className="summary-item-large">
-              <span className="summary-label">Tanggal:</span>
-              <span className="summary-value">
-                {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
-            </div>
-            <div className="summary-item-large">
-              <span className="summary-label">Harga per jam:</span>
-              <span className="summary-value price">Rp {selectedCourtData?.price.toLocaleString()}</span>
-            </div>
-            <div className="summary-item-large">
-              <span className="summary-label">Slot dipilih:</span>
-              <span className="summary-value">{selectedTimeSlots.length} slot</span>
-            </div>
+        {loadingSlots ? (
+          <div style={{ textAlign: 'center', padding: '30px' }}>
+            <div className="loader"></div>
+            <p>Memuat slot waktu tersedia...</p>
           </div>
-          
-          <div className="time-range-selection">
-            <h4>⏳ Pilih Rentang Waktu (Opsional)</h4>
-            <div className="range-selection-buttons">
-              <button 
+        ) : availableSlots.length > 0 ? (
+          <div>
+            {/* RANGE SELECTION BUTTONS */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '10px', 
+              flexWrap: 'wrap', 
+              marginBottom: '20px',
+              padding: '15px',
+              background: '#f0f9ff',
+              borderRadius: '10px'
+            }}>
+              <button
                 className="range-btn"
                 onClick={() => selectMultipleTimeSlots('10:00', '12:00')}
+                style={{ padding: '8px 12px', background: '#dbeafe', border: '1px solid #93c5fd', borderRadius: '6px' }}
               >
                 10:00 - 12:00 (2 jam)
               </button>
-              <button 
+              <button
                 className="range-btn"
                 onClick={() => selectMultipleTimeSlots('14:00', '17:00')}
+                style={{ padding: '8px 12px', background: '#dbeafe', border: '1px solid #93c5fd', borderRadius: '6px' }}
               >
                 14:00 - 17:00 (3 jam)
               </button>
-              <button 
-                className="range-btn"
-                onClick={() => selectMultipleTimeSlots('18:00', '21:00')}
-              >
-                18:00 - 21:00 (3 jam)
-              </button>
-              <button 
+              <button
                 className="range-btn"
                 onClick={() => setSelectedTimeSlots([])}
+                style={{ padding: '8px 12px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '6px' }}
               >
-                🔄 Reset Semua Pilihan
+                🔄 Reset Semua
               </button>
             </div>
+
+            {/* GRID SLOT JAM */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+              gap: '12px' 
+            }}>
+              {availableSlots.map((slot: any) => {
+                const isFull = !slot.available;
+                const isPast = isTimeInPast(bookingType === 'single' ? selectedDate : multiDates[0] || '', slot.start);
+                const currentUniqueId = `${bookingType === 'single' ? selectedDate : 'multi'}-${slot.start}`;
+                const isSelected = selectedTimeSlots.some(s => s.uniqueId === currentUniqueId);
+                const isDisabled = isFull || isPast;
+
+                return (
+                  <button
+                    key={`${slot.start}-${slot.end}`}
+                    disabled={isDisabled}
+                    onClick={() => toggleTimeSlot({
+                      ...slot,
+                      date: bookingType === 'single' ? selectedDate : multiDates[0] || ''
+                    })}
+                    style={{
+                      padding: '15px 10px',
+                      borderRadius: '12px',
+                      border: isSelected ? '2px solid #007bff' : '1px solid #e2e8f0',
+                      backgroundColor: isDisabled ? '#f1f5f9' : (isSelected ? '#007bff' : '#fff'),
+                      color: isDisabled ? '#94a3b8' : (isSelected ? '#fff' : '#334155'),
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      opacity: isDisabled ? 0.5 : 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      transition: 'all 0.2s',
+                      position: 'relative'
+                    }}
+                  >
+                    <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{slot.start}</span>
+                    <span style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+                      {isDisabled ? (isPast ? '⏰ Lewat' : '⛔ Penuh') : '✅ Tersedia'}
+                    </span>
+                    {!isDisabled && (
+                      <span style={{ fontSize: '0.75rem', color: isSelected ? '#fff' : '#16a34a', marginTop: '4px' }}>
+                        Rp {selectedCourtData?.price?.toLocaleString()}
+                      </span>
+                    )}
+                    {isSelected && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        background: '#22c55e',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px'
+                      }}>
+                        ✓
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '30px', background: '#fef2f2', borderRadius: '10px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>😔</div>
+            <p style={{ color: '#dc2626', fontWeight: 'bold' }}>Tidak ada slot tersedia untuk tanggal ini.</p>
+            <p style={{ color: '#666', marginBottom: '20px' }}>Coba pilih tanggal lain atau lapangan berbeda.</p>
+            <button 
+              onClick={() => setStep(1)}
+              style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}
+            >
+              ← Kembali ke Pilih Lapangan
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* RINGKASAN PESANAN */}
+      {selectedTimeSlots.length > 0 && (
+        <div style={{ 
+          marginTop: '30px', 
+          padding: '20px', 
+          backgroundColor: '#eef7ff', 
+          borderRadius: '15px', 
+          border: '1px solid #cfe2ff' 
+        }}>
+          <h4 style={{ color: '#0056b3', marginBottom: '15px' }}>📋 Ringkasan Pesanan Anda:</h4>
           
-          {selectedTimeSlots.length > 0 && (
-            <div className="selected-slots-preview">
-              <h4>✅ Slot Waktu Dipilih ({selectedTimeSlots.length} slot):</h4>
-              <div className="selected-slots-list">
-                {selectedTimeSlots.map((slot, index) => (
-                  <div key={index} className="selected-slot-badge">
-                    {slot.time}:00 - {parseInt(slot.time) + 1}:00
-                    <button 
-                      className="remove-slot-btn"
-                      onClick={() => {
-                        const newSlots = [...selectedTimeSlots];
-                        newSlots.splice(index, 1);
-                        setSelectedTimeSlots(newSlots);
-                      }}
-                    >
-                      ✕
-                    </button>
+          {/* Untuk Single Booking */}
+          {bookingType === 'single' && (
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Tanggal:</p>
+              <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+            </div>
+          )}
+          
+          {/* Untuk Multi Date */}
+          {bookingType === 'weekly' && multiDates.length > 0 && (
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Tanggal Terpilih ({multiDates.length}):</p>
+              <div style={{ 
+                background: '#fff', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                border: '1px solid #e2e8f0',
+                maxHeight: '120px',
+                overflowY: 'auto'
+              }}>
+                {multiDates.map(date => (
+                  <div key={date} style={{ padding: '5px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    {new Date(date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
 
-        <div className="time-slots-section">
-          <h3 className="time-slots-title">⏰ Slot Waktu Tersedia (Klik untuk pilih lebih dari satu)</h3>
-          <p className="time-slots-subtitle">Tips: Klik tombol rentang waktu di atas untuk memilih beberapa jam sekaligus</p>
+          <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Jam Terpilih ({selectedTimeSlots.length}):</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
+            {selectedTimeSlots.map((item: any, index: number) => (
+              <div 
+                key={`${item.uniqueId}-${index}`} 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: '#fff', 
+                  padding: '12px', 
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}
+              >
+                <div>
+                  <span style={{ fontWeight: 'bold' }}>⏰ {item.start}</span>
+                  {bookingType === 'single' && (
+                    <span style={{ marginLeft: '10px', color: '#666' }}>
+                      ({new Date(item.date).toLocaleDateString('id-ID', { weekday: 'short' })})
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontWeight: 'bold', color: '#16a34a' }}>
+                    Rp {item.price?.toLocaleString()}
+                  </span>
+                  <button 
+                    onClick={() => toggleTimeSlot(item)} 
+                    style={{ 
+                      border: 'none', 
+                      background: 'none', 
+                      color: '#dc3545', 
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      padding: '0 5px'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
           
-          <div className="time-slots-grid-ordered">
-            {timeSlots.map(time => {
-              // const isAvailable = isTimeSlotAvailable(selectedCourt, time);
-              // const isSelected = selectedTimeSlots.some(slot => slot.date === selectedDate && slot.time === time);
-              // const isPast = isTimeInPast(selectedDate, time);
-              
-              // 1. Panggil fungsi status (Otak)
-              const status = getSlotStatus(selectedCourt, time, selectedDate);
-              
-              // 2. Tentukan variabel berdasarkan status
-              const isSelected = selectedTimeSlots.some(slot => slot.date === selectedDate && slot.time === time);
-              
-              let label = "✅ Tersedia";
-              let btnClass = "";
-              let isDisabled = false;
-
-              // Logika penentuan tampilan
-              if (status === 'FULL') {
-                label = "⛔ Penuh";
-                btnClass = "booked";
-                isDisabled = true;
-              } else if (status === 'PAST') {
-                label = "⌛ Lewat";
-                btnClass = "past-time";
-                isDisabled = true;
-              } else if (status === 'MAINTENANCE') {
-                label = "🛠️ Perbaikan";
-                btnClass = "maintenance"; // Anda bisa tambah CSS warna kuning
-                isDisabled = true;
-              } else if (status === 'UNAVAILABLE') {
-                label = "🚫 Tutup";
-                btnClass = "unavailable"; // Anda bisa tambah CSS warna abu-abu
-                isDisabled = true;
-              }
-
-              return (
-                <button
-                  key={time}
-                  // Tombol mati jika: Penuh, Lewat, Perbaikan, atau Tutup
-                  disabled={isDisabled} 
-                  className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${btnClass}`}
-                  onClick={() => !isDisabled && toggleTimeSlot(time)}
-                >
-                  <div className="time-range-large">{time} - {parseInt(time) + 1}:00</div>
-                  
-                  <div className="time-status-large">{label}</div>
-
-                  {/* Harga hanya muncul jika statusnya Tersedia */}
-                  {status === 'AVAILABLE' && (
-                    <div className="time-price-large">
-                      Rp {selectedCourtData?.price.toLocaleString()}
-                    </div>
-                  )}
-
-                  {isSelected && (
-                    <div className="selected-checkmark">✓</div>
-                  )}
-                </button>
-                // <button
-                //   key={time}
-                //   className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${!isAvailable ? 'booked' : ''} ${isPast ? 'past-time' : ''}`}
-                //   onClick={() => isAvailable && !isPast && toggleTimeSlot(time)}
-                //   disabled={!isAvailable || isPast}
-                // >
-                //   <div className="time-range-large">{time} - {parseInt(time) + 1}:00</div>
-                //   <div className="time-status-large">
-                //     {!isAvailable ? '⛔ Penuh' : isPast ? '⌛ Lewat' : '✅ Tersedia'}
-                //   </div>
-                //   {isAvailable && !isPast && (
-                //     <div className="time-price-large">
-                //       Rp {selectedCourtData?.price.toLocaleString()}
-                //     </div>
-                //   )}
-                //   {isSelected && (
-                //     <div className="selected-checkmark">✓</div>
-                //   )}
-                // </button>
-              );
-            })}
+          <div style={{ 
+            marginTop: '15px', 
+            paddingTop: '15px', 
+            borderTop: '2px solid #cfe2ff', 
+            textAlign: 'right' 
+          }}>
+            <div style={{ marginBottom: '10px' }}>
+              <span style={{ marginRight: '15px' }}>
+                Total Jam: <strong>{selectedTimeSlots.length}</strong>
+              </span>
+              {bookingType === 'weekly' && (
+                <span>
+                  Total Hari: <strong>{multiDates.length}</strong>
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+              Total: Rp {calculateTotal().toLocaleString()}
+            </span>
           </div>
         </div>
+      )}
 
-        <div className="step-actions">
-          <button 
-            className="btn btn-outline"
-            onClick={() => setStep(1)}
-          >
-            ← Kembali ke Pilih Lapangan
-          </button>
-          <button 
-            className="btn btn-primary"
-            disabled={selectedTimeSlots.length === 0 || creatingDraft}
-            onClick={handleGoToPayment} // Panggil fungsi yang baru kita buat
-          >
-            {creatingDraft ? "⏳ Mengunci Slot..." : `💳 Lanjut ke Pembayaran (${selectedTimeSlots.length} slot) →`}
-          </button>
-        </div>
+      {/* TOMBOL NAVIGASI */}
+      <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'space-between', gap: '15px' }}>
+        <button 
+          onClick={() => setStep(1)}
+          className="btn-outline"
+          style={{ padding: '12px 25px' }}
+        >
+          ← Kembali ke Pilih Lapangan
+        </button>
+        <button 
+          disabled={selectedTimeSlots.length === 0 || (bookingType === 'weekly' && multiDates.length === 0)}
+          onClick={handleGoToPayment} 
+          className="btn-primary"
+          style={{ padding: '12px 25px', fontSize: '16px' }}
+        >
+          {confirming ? '⏳ Memproses...' : `Lanjut Pembayaran →`}
+        </button>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
+// Tambahkan fungsi helper untuk mendapatkan 7 hari ke depan:
+// const getNext7Days = () => {
+//   const dates = [];
+//   const today = new Date();
+  
+//   for (let i = 0; i < 7; i++) {
+//     const nextDate = new Date(today);
+//     nextDate.setDate(today.getDate() + i);
+//     dates.push(nextDate.toISOString().split('T')[0]);
+//   }
+  
+//   return dates;
+// };
+
+// Fungsi untuk toggle/pilih time slot
+const toggleTimeSlot = (slot: any) => {
+  // Buat ID unik: contoh "2024-05-20-08:00"
+  const slotTime = slot.start || slot.time || '';
+  const uniqueId = `${slot.date || selectedDate}-${slotTime}`;
+  const selectedCourtData = courts.find(c => c.id === selectedCourt);
+  const currentPrice = slot.price || (selectedCourtData?.price || courtData?.price || courtData?.pricePerHour || 0);
+
+  // Ambil ID dengan mencoba beberapa kemungkinan nama field dari backend
+  const aId = slot.id || slot.availabilityId || slot._id;
+
+  setSelectedTimeSlots((prev) => {
+    // Cek apakah slot di tanggal dan jam ini sudah ada di keranjang
+    const isAlreadySelected = prev.some((s) => s.uniqueId === uniqueId);
+
+    if (isAlreadySelected) {
+      // Jika sudah ada, hapus dari pilihan (unselect)
+      return prev.filter((s) => s.uniqueId !== uniqueId);
+    } else {
+      // Jika belum ada, tambahkan ke pilihan
+      return [
+        ...prev,
+        {
+          ...slot,
+          uniqueId,           // ID Unik untuk identifikasi
+          date: slot.date || selectedDate, // Simpan tanggalnya!
+          availabilityId: aId,
+          price: currentPrice || 0, // Simpan harga lapangan ini
+          start: slotTime,
+          time: slotTime,
+          courtName: slot.courtName || selectedCourtData?.name || courtData?.name
+        },
+      ];
+    }
+  });
+};
+
+// FIX: Perbaiki fungsi calculateTotal
+const calculateTotal = () => {
+  // Pastikan semua item memiliki price
+  const validSlots = selectedTimeSlots.filter(slot => slot.price > 0);
+  
+  // Hitung total berdasarkan tipe booking
+  const totalHoursPrice = validSlots.reduce((acc, curr) => acc + (curr.price || 0), 0);
+  
+  if (bookingType === 'single') {
+    return totalHoursPrice;
+  } else {
+    // Untuk multi-date, kalikan dengan jumlah tanggal
+    return totalHoursPrice * multiDates.length;
+  }
+};
+
+// FIX: Perbaiki fungsi handleGoToPayment untuk menghindari error split
+// const handleGoToPayment = async () => {
+//   console.log("handleGoToPayment dipanggil");
+  
+//   const latestUser = userProp || JSON.parse(localStorage.getItem('user') || 'null');
+  
+//   // Cek login
+//   if (!latestUser?.id) {
+//     const pendingData = {
+//       selectedCourt,
+//       selectedDate: bookingType === 'single' ? selectedDate : multiDates[0] || selectedDate,
+//       selectedTimeSlots,
+//       bookingRepeat: bookingType === 'single' ? 'none' : 'weekly',
+//       bookingType,
+//       multiDates,
+//     };
+    
+//     sessionStorage.setItem('pendingBooking', JSON.stringify(pendingData));
+//     alert("Silakan login terlebih dahulu untuk melanjutkan pembayaran.");
+//     navigate('/auth?mode=login&redirect=/booking');
+//     return;
+//   }
+
+//   // Validasi
+//   if (!selectedCourt) {
+//     alert("Pilih lapangan terlebih dahulu!");
+//     return;
+//   }
+
+//   if (selectedTimeSlots.length === 0) {
+//     alert("Pilih jam terlebih dahulu!");
+//     return;
+//   }
+
+//   if (bookingType === 'weekly' && multiDates.length === 0) {
+//     alert("Pilih minimal satu tanggal untuk booking berulang!");
+//     return;
+//   }
+
+//   try {
+//     // Tentukan tanggal berdasarkan tipe booking
+//     const finalDates = bookingType === 'single' ? [selectedDate] : multiDates;
+    
+//     // Format slots untuk backend - FIX: Hindari error split
+//     const formattedSlots = selectedTimeSlots.map(slot => {
+//       // FIX: Gunakan start bukan time, dan pastikan ada nilai
+//       const slotTime = slot.start || slot.time || '00:00';
+//       const startHour = parseInt(slotTime.split(':')[0] || '0');
+//       const endHour = startHour + 1;
+      
+//       return {
+//         start: `${startHour.toString().padStart(2, '0')}:00`,
+//         end: `${endHour.toString().padStart(2, '0')}:00`
+//       };
+//     });
+
+    // Dapatkan availabilityIds dari slot yang dipilih
+//     const availabilityIds = selectedTimeSlots
+//       .map(slot => slot.availabilityId || slot.id)
+//       .filter(id => id && id !== 'undefined');
+
+//     console.log("Mengirim data ke backend:", {
+//       fieldId: selectedCourt,
+//       date: finalDates[0],
+//       slots: formattedSlots,
+//       availabilityIds,
+//       recurring: {
+//         type: bookingType === 'single' ? 'SINGLE' : 'WEEKLY',
+//         dates: finalDates,
+//         count: finalDates.length
+//       }
+//     });
+
+//     // Panggil mutation
+//     const { data } = await createDraft({
+//       variables: {
+//         fieldId: String(selectedCourt),
+//         date: finalDates[0],
+//         slots: formattedSlots,
+//         availabilityIds: availabilityIds.length > 0 ? availabilityIds : ['temp-id'],
+//         recurring: {
+//           type: bookingType === 'single' ? 'SINGLE' : 'WEEKLY',
+//           dates: finalDates,
+//           count: finalDates.length
+//         }
+//       }
+//     });
+
+//     if (data?.createReservationDraft?.reservationId) {
+//       setReservationInfo(data.createReservationDraft);
+//       setStep(3);
+//     } else {
+//       throw new Error("Gagal membuat draft reservasi.");
+//     }
+//   } catch (err: any) {
+//     console.error("Error dari Server:", err);
+    
+//     // Tampilkan pesan error yang lebih spesifik
+//     if (err.message.includes("slot yang Anda pilih baru saja dipesan")) {
+//       alert("⚠️ Slot waktu yang Anda pilih baru saja dipesan orang lain. Silakan pilih slot lain.");
+//       // Refresh slot dengan memanggil ulang query
+//       // Anda bisa menambahkan refetch di sini
+//     } else if (err.message.includes("split")) {
+//       alert("Error: Format waktu tidak valid. Silakan refresh halaman dan coba lagi.");
+//     } else {
+//       alert("Gagal: " + (err.graphQLErrors?.[0]?.message || err.message));
+//     }
+    
+//     // Kembali ke step 2 untuk memilih ulang
+//     setStep(2);
+//   }
+// };
+
+// Tambahkan fungsi getNext7Days jika belum ada
+const getNext7Days = () => {
+  const dates = [];
+  const today = new Date();
+  
+  for (let i = 0; i < 7; i++) {
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + i);
+    dates.push(nextDate.toISOString().split('T')[0]);
+  }
+  
+  return dates;
+};
+
+// Tambahkan CSS animation jika belum ada
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
+
+  // // Step 2: Pilih Waktu dengan Multi Selection
+  // const renderStep2 = () => {
+  //   const selectedCourtData = courts.find(c => c.id === selectedCourt);
+  //   const allBookings = generateRepeatBookings();
+
+  //   return (
+  //     <div className="booking-step">
+  //       <div className="time-selection-header">
+  //         <h2 className="time-selection-title">🕐 Pilih Waktu Booking</h2>
+          
+  //         <div className="repeat-booking-section">
+  //         {/* --- TOMBOL NAVIGASI TIPE (BIRU JIKA AKTIF) --- */}
+  //         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
+  //           <button
+  //             onClick={() => { setBookingType('single'); setMultiDates([]); }}
+  //             style={{
+  //               padding: '10px 20px', borderRadius: '20px', border: '1px solid #007bff', cursor: 'pointer',
+  //               backgroundColor: bookingType === 'single' ? '#007bff' : '#fff',
+  //               color: bookingType === 'single' ? '#fff' : '#007bff',
+  //               fontWeight: 'bold'
+  //             }}
+  //           >
+  //             🚫 Sekali Pesan
+  //           </button>
+  //           <button
+  //             onClick={() => { setBookingType('weekly'); setMultiDates([]); }}
+  //             style={{
+  //               padding: '10px 20px', borderRadius: '20px', border: '1px solid #007bff', cursor: 'pointer',
+  //               backgroundColor: bookingType === 'weekly' ? '#007bff' : '#fff',
+  //               color: bookingType === 'weekly' ? '#fff' : '#007bff',
+  //               fontWeight: 'bold'
+  //             }}
+  //           >
+  //             📅 Pesanan Berulang
+  //           </button>
+            
+  //         </div>
+
+  //         <div className="booking-card" style={{ padding: '20px', border: '1px solid #eee', borderRadius: '15px' }}>
+            
+  //           {/* --- KONDISI 1: SEKALI PESAN --- */}
+  //           {bookingType === 'single' && (
+  //             <div className="single-ui">
+  //               <h4 style={{ color: '#333' }}>📅 Pilih Tanggal Main</h4>
+  //               <input 
+  //                 type="date" 
+  //                 value={selectedDate} 
+  //                 onChange={(e) => setSelectedDate(e.target.value)}
+  //                 style={{ width: '100%', padding: '10px', marginTop: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+  //               />
+  //             </div>
+  //           )}
+
+  //           {/* --- KONDISI 2: MINGGUAN --- */}
+  //           {bookingType === 'weekly' && (
+  //             <div className="weekly-ui">
+  //               <h4 style={{ color: '#007bff' }}>🚀 Paket Bebas</h4>
+                
+  //               <p><small>Pilih hari apa saja dalam seminggu:</small></p>
+  //               <input 
+  //                 type="date" 
+  //                 onChange={(e) => e.target.value && toggleMultiDate(e.target.value)}
+  //                 style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+  //               />
+  //             </div>
+  //           )}
+
+  //       {/* --- TAGS TANGGAL (Hanya muncul jika bukan Single) --- */}
+  //       {bookingType !== 'single' && (
+  //         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '15px' }}>
+  //           {multiDates.map(d => (
+  //             <div key={d} style={{ background: '#007bff', color: '#fff', padding: '5px 12px', borderRadius: '20px', fontSize: '12px' }}>
+  //               {d} <span onClick={() => toggleMultiDate(d)} style={{ cursor: 'pointer', marginLeft: '5px' }}>×</span>
+  //             </div>
+  //           ))}
+  //         </div>
+  //       )}
+  //         </div>
+  //       </div>
+
+
+  //       {/* Render Time Slots di bawahnya (berlaku untuk semua tanggal yang dipilih) */}
+  //       <div className="time-slots-section" style={{ marginTop: '20px' }}>
+  //         <h3>PILIH WAKTU DURASI SEWA</h3>
+  //         {/* <p><small>*Jam yang dipilih akan diterapkan ke semua tanggal di atas</small></p> */}
+  //         {/* ... (Gunakan logika rendering slots yang sudah ada di file kamu) ... */}
+  //       </div>
+          
+  //         <div className="booking-summary-large">
+  //           <div className="summary-item-large">
+  //             <span className="summary-label">Lapangan:</span>
+  //             <span className="summary-value">{selectedCourtData?.name}</span>
+  //           </div>
+  //           <div className="summary-item-large">
+  //             <span className="summary-label">Tanggal:</span>
+  //             <span className="summary-value">
+  //               {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+  //             </span>
+  //           </div>
+  //           <div className="summary-item-large">
+  //             <span className="summary-label">Harga per jam:</span>
+  //             <span className="summary-value price">Rp {selectedCourtData?.price.toLocaleString()}</span>
+  //           </div>
+  //           <div className="summary-item-large">
+  //             <span className="summary-label">Slot dipilih:</span>
+  //             <span className="summary-value">{selectedTimeSlots.length} slot</span>
+  //           </div>
+  //         </div>
+          
+  //         {/* <div className="time-range-selection">
+  //           <h4>⏳ Pilih Rentang Waktu (Opsional)</h4>
+  //           <div className="range-selection-buttons">
+  //             <button 
+  //               className="range-btn"
+  //               onClick={() => selectMultipleTimeSlots('10:00', '12:00')}
+  //             >
+  //               10:00 - 12:00 (2 jam)
+  //             </button>
+  //             <button 
+  //               className="range-btn"
+  //               onClick={() => selectMultipleTimeSlots('14:00', '17:00')}
+  //             >
+  //               14:00 - 17:00 (3 jam)
+  //             </button>
+  //             <button 
+  //               className="range-btn"
+  //               onClick={() => selectMultipleTimeSlots('18:00', '21:00')}
+  //             >
+  //               18:00 - 21:00 (3 jam)
+  //             </button>
+  //             <button 
+  //               className="range-btn"
+  //               onClick={() => setSelectedTimeSlots([])}
+  //             >
+  //               🔄 Reset Semua Pilihan
+  //             </button>
+  //           </div>
+  //         </div>
+  //          */}
+
+  //         {/* {selectedTimeSlots.length > 0 && (
+  //           <div className="selected-slots-preview">
+  //             <h4>✅ Slot Waktu Dipilih ({selectedTimeSlots.length} slot):</h4>
+  //             <div className="selected-slots-list">
+  //               {selectedTimeSlots.map((slot, index) => (
+  //                 <div key={index} className="selected-slot-badge">
+  //                   {slot.time}:00 - {parseInt(slot.time) + 1}:00
+  //                   <button 
+  //                     className="remove-slot-btn"
+  //                     onClick={() => {
+  //                       const newSlots = [...selectedTimeSlots];
+  //                       newSlots.splice(index, 1);
+  //                       setSelectedTimeSlots(newSlots);
+  //                     }}
+  //                   >
+  //                     ✕
+  //                   </button>
+  //                 </div>
+  //               ))}
+  //             </div>
+  //           </div>
+  //         )}
+  //       </div>
+
+  //       <div className="time-slots-section">
+  //         <h3 className="time-slots-title">⏰ Slot Waktu Tersedia (Klik untuk pilih lebih dari satu)</h3>
+  //         <p className="time-slots-subtitle">Tips: Klik tombol rentang waktu di atas untuk memilih beberapa jam sekaligus</p>
+          
+  //         <div className="time-slots-grid-ordered">
+  //            {loadingSlots ? (
+  //               <p>Memuat jadwal...</p>
+  //             ) : (
+  //               // Gunakan data dari backend (slotsData) bukan array lokal lagi
+  //               slotsData?.availableSlots.map((slot: any) => {
+                  
+  //                 const isFull = !slot.available; // Dari DB: is_booked = true maka available = false
+  //                 const isSelected = selectedTimeSlots.some(s => s.availabilityId === slot.id);
+                  
+  //                 let label = "✅ Tersedia";
+  //                 let btnClass = "";
+                  
+  //                 if (isFull) {
+  //                   label = "⛔ Penuh";
+  //                   btnClass = "booked";
+  //                 }
+
+  //                 return (
+  //                   <button
+  //                     key={slot.id}
+  //                     // Tombol mati jika Penuh
+  //                     disabled={isFull} 
+  //                     className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${btnClass}`}
+  //                     onClick={() => {
+  //                       // Kita simpan ID dari database agar saat checkout backend tahu mana yang mau dikunci
+  //                       toggleTimeSlot({
+  //                         id: slot.id,
+  //                         time: slot.start,
+  //                         end: slot.end
+  //                       });
+  //                     }}
+  //                   >
+  //                     <div className="time-range-large">{slot.start} - {slot.end}</div>
+  //                     <div className="time-status-large">{label}</div>
+
+  //                     {!isFull && (
+  //                       <div className="time-price-large">
+  //                         Rp {selectedCourtData?.price.toLocaleString()}
+  //                       </div>
+  //                     )}
+
+  //                     {isSelected && <div className="selected-checkmark">✓</div>}
+  //                   </button>
+  //                 );
+  //               })
+  //             )}
+  //         </div>
+  //       </div>
+
+  //       {/* Navigasi Tipe Booking */}
+  //         {/* <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
+  //           <button
+  //             onClick={() => { setBookingType('single'); setMultiDates([]); }}
+  //             style={{ padding: '10px 20px', borderRadius: '20px', cursor: 'pointer', backgroundColor: bookingType === 'single' ? '#007bff' : '#fff', color: bookingType === 'single' ? '#fff' : '#007bff', border: '1px solid #007bff' }}
+  //           >
+  //             🚫 Sekali Pesan
+  //           </button>
+  //           <button
+  //             onClick={() => { setBookingType('weekly'); setMultiDates([]); }}
+  //             style={{ padding: '10px 20px', borderRadius: '20px', cursor: 'pointer', backgroundColor: bookingType === 'weekly' ? '#007bff' : '#fff', color: bookingType === 'weekly' ? '#fff' : '#007bff', border: '1px solid #007bff' }}
+  //           >
+  //             📅 Pesanan Berulang
+  //           </button>
+  //         </div> */}
+
+  //         {/* <div className="booking-card" style={{ padding: '20px', border: '1px solid #eee', borderRadius: '15px' }}>
+  //           <h4 style={{ color: '#333' }}>📅 Pilih Tanggal Main</h4>
+  //           <input 
+  //             type="date" 
+  //             value={selectedDate} 
+  //             onChange={(e) => setSelectedDate(e.target.value)}
+  //             style={{ width: '100%', padding: '10px', marginTop: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+  //           />
+  //         </div> */}
+  //       </div>
+
+  //       <div className="time-slots-section">
+  //       <h3 className="time-slots-title">⏰ Slot Waktu Tersedia</h3>
+  //       <div className="time-slots-grid-ordered">
+  //         {loadingSlots ? (
+  //           <p>⏳ Memuat jadwal...</p>
+  //         ) : (
+  //           // Jaring pengaman: Menggunakan data dari database
+  //           (slotsData?.availableSlots || slotsData?.fields)?.map((slot: any) => {
+  //             const isFull = !slot.available; 
+  //             const isSelected = selectedTimeSlots.some(s => s.id === slot.id);
+              
+  //             return (
+  //               <button
+  //                 key={slot.id}
+  //                 disabled={isFull} 
+  //                 className={`time-slot-btn-large ${isSelected ? 'selected' : ''} ${isFull ? 'booked' : ''}`}
+  //                 onClick={() => toggleTimeSlot({ id: slot.id, time: slot.start, end: slot.end })}
+  //                 style={{
+  //                   opacity: isFull ? 0.3 : 1, // TRANSPARANSI: 0.3 artinya pudar/redup
+  //                   cursor: isFull ? 'not-allowed' : 'pointer',
+  //                 }}
+  //               >
+  //                 <div className="time-range-large">{slot.start} - {slot.end}</div>
+  //                 <div className="time-status-large">{isFull ? "⛔ Penuh" : "✅ Tersedia"}</div>
+  //                 {!isFull && <div className="time-price-large">Rp {selectedCourtData?.price.toLocaleString()}</div>}
+  //               </button>
+  //             );
+  //           })
+  //         )}
+  //       </div>
+  //     </div>
+
+  //     <div className="step-actions" style={{ marginTop: '20px' }}>
+  //       <button className="btn btn-outline" onClick={() => setStep(1)}>← Kembali</button>
+  //       <button 
+  //         className="btn btn-primary" 
+  //         disabled={selectedTimeSlots.length === 0}
+  //         onClick={handleGoToPayment}
+  //       >
+  //         Lanjut ke Pembayaran ({selectedTimeSlots.length} slot) →
+  //       </button>
+  //     </div>
+  //     </div>
+  //   );
+  // };
 
   // === Handler Pembayaran ===
   const handlePayment = async () => {
@@ -1217,7 +2083,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
 
   //     if (data?.confirmReservation?.snapUrl) {
   //       // REDIRECT KE MIDTRANS
-  //       // Ini akan membuka halaman pembayaran resmi (Gopay/QRIS/Bank)
+  //       / / Ini akan membuka halaman pembayaran resmi (Gopay/QRIS/Bank)
   //       window.location.href = data.confirmReservation.snapUrl;
   //     } else {
   //       throw new Error("Gagal mendapatkan link pembayaran dari Midtrans.");
@@ -1302,7 +2168,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
                   </span>
                 </div>
 
-                <div style={{ marginTop: '20px', fontWeight: '600', fontSize: '0.9rem' }}>
+                {/* <div style={{ marginTop: '20px', fontWeight: '600', fontSize: '0.9rem' }}>
                   📅 Jadwal Terpilih ({allBookings.length} Slot):
                 </div>
                 
@@ -1315,6 +2181,26 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
                       <span className="slot-time-tag">
                         {slot.time}:00 - {parseInt(slot.time) + 1}:00
                       </span>
+                    </div>
+                  ))}
+                </div> */}
+
+                <div className="time-slots-container">
+                  {(reservationInfo as any)?.timeSlots?.dates?.map((tgl: string, index: number) => (
+                    <div key={index} className="slot-pill" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', background: '#f8fafc', padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold' }}>
+                        {new Date(tgl).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </span>
+                      
+                      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                        {/* Kita ambil jam dari reservationInfo.timeSlots.hours */}
+                        {(reservationInfo as any)?.timeSlots?.hours?.map((slot: any, idx: number) => (
+                          <span key={idx} className="slot-time-tag" style={{ background: '#4f46e5', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                            {/* slice(0, 5) untuk membuang :00 (detik) */}
+                            {slot.start.slice(0, 5)} - {slot.end.slice(0, 5)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1352,9 +2238,15 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
                     Rp {reservationInfo?.totalAmount?.toLocaleString('id-ID') ?? totalPrice?.toLocaleString('id-ID') ?? '0'}
                   </span>
                 </div>
+                <div style={{ marginTop: '15px', padding: '10px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#92400e', lineHeight: '1.5' }}>
+                    <strong>⚠️ Catatan Durasi:</strong><br />
+                    Waktu sewa efektif adalah <strong>50 menit</strong> per jam. 10 menit terakhir digunakan untuk pergantian pemain dan sterilisasi lapangan agar jadwal berikutnya tepat waktu.
+                  </p>
+                </div>
               </div>
 
-              <div className="payment-methods" style={{ marginTop: '25px' }}>
+              {/* <div className="payment-methods" style={{ marginTop: '25px' }}>
                 <h4 style={{ fontSize: '0.9rem', color: '#718096', textTransform: 'uppercase' }}>Pilih Metode Pembayaran</h4>
                 <div className="payment-options">
                   {['BCA Virtual Account', 'BNI Virtual Account', 'Mandiri Virtual Account', 'Gopay', 'QRIS'].map((method) => (
@@ -1364,7 +2256,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
                     </label>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

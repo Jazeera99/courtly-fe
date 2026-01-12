@@ -96,20 +96,20 @@ function App() {
     if (pending && userData?.role === 'user') {
       try {
         const bookingData = JSON.parse(pending);
-        setTimeout(() => {
-          navigate('/booking', {
-            state: {
-              restoreBooking: true,
-              bookingData
-            }
-          });
-          // cleanup
-          localStorage.removeItem('pendingBooking');
+        
+        if (bookingData.venueId) {
+          // 2. Hapus memori pending agar tidak redirect terus-menerus
           sessionStorage.removeItem('pendingBooking');
-        }, 500);
-        return;
+
+          // 3. Arahkan ke /booking sambil membawa ID venue
+          // Ini akan membuka halaman pilih tanggal & waktu
+          navigate(`/booking?venueId=${bookingData.venueId}`, { 
+            state: { goToStep: 2 }
+          });
+          return; // Berhenti di sini, jangan lanjut ke /profile
+        }
       } catch (e) {
-        console.warn('Failed parsing pending booking:', e);
+        console.warn('Gagal memproses data pending booking:', e);
       }
     }
 

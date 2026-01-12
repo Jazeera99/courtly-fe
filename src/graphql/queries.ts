@@ -20,8 +20,10 @@ export const GET_FIELDS = gql`
 export const GET_AVAILABLE_SLOTS = gql`
   query GetAvailableSlots($fieldId: ID!, $date: Date!) {
     availableSlots(fieldId: $fieldId, date: $date) {
+      id
       start
       end
+      price
       available
     }
   }
@@ -49,8 +51,10 @@ export const GET_BOOKING_DATA = gql`
       }
       # Ini yang paling penting untuk Step 1 & 2
       availableSlots(date: $date) {
+        id
         start
         end
+        price
         available
       }
     }
@@ -96,6 +100,7 @@ export const REGISTER_MUTATION = gql`
         name
         email
         phone
+        role
       }
     }
   }
@@ -112,6 +117,29 @@ export const LOGIN_MUTATION = gql`
         phone
         role
       }
+    }
+  }
+`;
+
+export const GET_MY_BOOKINGS = gql`
+  query GetMyBookings {
+    myBookings {
+      id
+      courtName
+      venue
+      location
+      status
+      price
+      createdAt
+      paymentStatus
+      paymentMethod
+      timeSlots
+      invoiceNumber
+      customerName
+      customerPhone
+      ownerName
+      ownerPhone
+      paymentTime
     }
   }
 `;

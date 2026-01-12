@@ -35,6 +35,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
     const user = loginData.user;
     const token = loginData.token;
 
+    const completeUserData = { ...user, token };
+
     // 2. SATUKAN token ke dalam objek user agar tidak terpisah
     const userDataToSave = {
       ...user,
@@ -48,7 +50,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
     localStorage.setItem('token', token); 
 
     // 4. Lapor ke App.tsx dengan data yang sudah lengkap ada tokennya
-    onSuccess(userDataToSave); 
+    onSuccess(completeUserData); 
 
     toast.showToast('Login berhasil', 'success');
 
