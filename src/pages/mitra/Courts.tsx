@@ -1,293 +1,217 @@
-// src/pages/mitra/Courts.tsx
-import React, { useState } from 'react';
-import { Edit, Trash2, Plus, Settings, Calendar } from 'lucide-react';
+import React, { useState } from 'react'; 
+import { useQuery, useMutation } from '@apollo/client';
+import { Edit, Trash2, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { GET_PARTNER_COURTS, GET_PARTNER_STATS } from '../../graphql/queries';
+import { SAVE_FIELD, DELETE_FIELD } from '../../graphql/mutations';
+import CourtForm from '../../components/mitra/CourtForm';
 import '../../styles/PartnerDashboard.css';
 
-interface Court {
-  id: number;
-  name: string;
-  type: 'futsal' | 'badminton' | 'basket' | 'tennis' | 'voli';
-  price: number;
-  status: 'available' | 'maintenance' | 'booked';
-  capacity: number;
-  size: string;
-  description: string;
-  bookingsToday: number;
-}
-
 const MitraCourts: React.FC = () => {
-  const [courts, setCourts] = useState<Court[]>([
-    { id: 1, name: 'Lapangan Futsal 1', type: 'futsal', price: 150000, status: 'available', capacity: 10, size: '25m x 15m', description: 'Lapangan futsal standar internasional', bookingsToday: 3 },
-    { id: 2, name: 'Lapangan Futsal 2', type: 'futsal', price: 150000, status: 'booked', capacity: 10, size: '25m x 15m', description: 'Lapangan futsal dengan lampu LED', bookingsToday: 5 },
-    { id: 3, name: 'Lapangan Badminton A', type: 'badminton', price: 80000, status: 'available', capacity: 4, size: '13.4m x 6.1m', description: 'Lapangan badminton dengan lantai kayu', bookingsToday: 2 },
-    { id: 4, name: 'Lapangan Badminton B', type: 'badminton', price: 80000, status: 'maintenance', capacity: 4, size: '13.4m x 6.1m', description: 'Lapangan badminton sedang perawatan', bookingsToday: 0 },
-    { id: 5, name: 'Lapangan Basket', type: 'basket', price: 120000, status: 'available', capacity: 20, size: '28m x 15m', description: 'Lapangan basket outdoor', bookingsToday: 1 },
-    { id: 6, name: 'Lapangan Tennis', type: 'tennis', price: 200000, status: 'available', capacity: 4, size: '23.77m x 8.23m', description: 'Lapangan tennis dengan permukaan hardcourt', bookingsToday: 0 },
-  ]);
+  const venueId = localStorage.getItem('venueId')?.replace(/"/g, '') || "";
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedCourt, setSelectedCourt] = useState<any>(null);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'futsal': return '⚽';
-      case 'badminton': return '🏸';
-      case 'basket': return '🏀';
-      case 'tennis': return '🎾';
-      case 'voli': return '🏐';
-      default: return '🏟️';
+  const [saveField] = useMutation(SAVE_FIELD);
+  const [deleteField] = useMutation(DELETE_FIELD);
+
+  // 1. Tambahkan Fungsi Helper untuk Format Jam di sini
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '--:--';
+    try {
+      // Jika formatnya ISO string "1970-01-01T08:00:00Z"
+      const date = new Date(timeString);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      }
+      // Jika formatnya string biasa "08:00:00"
+      return timeString.substring(0, 5);
+    } catch (e) {
+      return timeString;
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'futsal': return '#3b82f6';
-      case 'badminton': return '#10b981';
-      case 'basket': return '#ef4444';
-      case 'tennis': return '#8b5cf6';
-      case 'voli': return '#f59e0b';
-      default: return '#6b7280';
-    }
+  const { data: statsData, loading: statsLoading } = useQuery(GET_PARTNER_STATS, {
+    variables: { venueId },
+    skip: !venueId,
+  });
+
+  const { data: courtsData, loading: courtsLoading, refetch } = useQuery(GET_PARTNER_COURTS, {
+    variables: { venueId: venueId.trim() },
+    skip: !venueId,
+    fetchPolicy: "network-only",
+  });
+
+  const getTypeIcon = (type: string) => {
+    const t = type?.toLowerCase() || '';
+    if (t.includes('futsal')) return '⚽';
+    if (t.includes('badminton')) return '🏸';
+    if (t.includes('basket')) return '🏀';
+    return '🏟️';
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'available': return { bg: '#d1fae5', text: '#065f46' };
-      case 'booked': return { bg: '#dbeafe', text: '#1e40af' };
       case 'maintenance': return { bg: '#fee2e2', text: '#991b1b' };
       default: return { bg: '#f3f4f6', text: '#6b7280' };
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'available': return 'Tersedia';
-      case 'booked': return 'Dipesan';
-      case 'maintenance': return 'Perawatan';
-      default: return status;
+  // --- HANDLER UNTUK FORM ---
+  const handleAddClick = () => {
+    setSelectedCourt(null); // Reset data untuk tambah baru
+    setIsFormOpen(true);
+  };
+
+  const handleEditClick = (court: any) => {
+    // Map data dari DB ke format yang dibutuhkan Form Anda
+    setSelectedCourt({
+      id: court.id,
+      name: court.name,
+      type: court.field_categories?.[0]?.categories?.name?.toLowerCase() || 'futsal',
+      price: court.pricePerHour,
+      status: court.is_available ? 'available' : 'maintenance',
+      description: court.description || '',
+      city: court.city || '',
+      province: court.province || '',
+      full_address: court.full_address || ''
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleSaveCourt = async (formData: any) => {
+    try {
+        const input = {
+        id: formData.id ? formData.id.toString() : null,
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        type: formData.type,
+        venue_id: venueId,
+        // Data lokasi sekarang diambil dari form, bukan default lagi
+        city: formData.city,
+        province: formData.province,
+        full_address: formData.full_address,
+        // Jam operasional (bisa dikembangkan lagi nanti)
+        opening_time: "2024-01-01T08:00:00Z", 
+        closing_time: "2024-01-01T22:00:00Z"
+      };
+
+      await saveField({ variables: { input } });
+      
+      setIsFormOpen(false);
+      refetch(); // Refresh list agar data terbaru muncul
+      alert("Data berhasil disimpan!");
+    } catch (error: any) {
+      alert("Gagal menyimpan: " + error.message);
     }
   };
 
-  const handleDeleteCourt = (id: number) => {
+  const handleDeleteCourt = async (id: string) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus lapangan ini?')) {
-      setCourts(courts.filter(court => court.id !== id));
+      try {
+        await deleteField({ variables: { id } });
+        refetch();
+      } catch (error: any) {
+        alert("Gagal menghapus: " + error.message);
+      }
     }
   };
+
+  if (courtsLoading || statsLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="animate-spin mr-2" /> <span>Menghubungkan ke Database...</span>
+      </div>
+    );
+  }
+
+  if (!venueId) {
+    return (
+      <div className="p-10 text-center">
+        <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
+        <h2>Venue ID Tidak Ditemukan</h2>
+      </div>
+    );
+  }
+
+  const stats = statsData?.getPartnerStats;
+  const courts = courtsData?.getPartnerCourts || [];
 
   return (
     <div className="mitra-page fullscreen-content">
       <div className="page-content">
         <div className="page-header">
           <h1>🏟️ Kelola Lapangan</h1>
-          <p>Kelola semua lapangan di venue Anda</p>
+          <p>Kelola data dan jadwal operasional lapangan Anda.</p>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid-4" style={{ marginBottom: '32px' }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🏟️</div>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Total Lapangan</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>{courts.length}</div>
-          </div>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✅</div>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Tersedia</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>
-              {courts.filter(c => c.status === 'available').length}
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📅</div>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Booking Hari Ini</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>
-              {courts.reduce((sum, court) => sum + court.bookingsToday, 0)}
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🔧</div>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Dalam Perawatan</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>
-              {courts.filter(c => c.status === 'maintenance').length}
-            </div>
-          </div>
+          <StatCard emoji="🏟️" label="Total" value={stats?.totalCourts || 0} />
+          <StatCard emoji="✅" label="Tersedia" value={stats?.availableCourts || 0} />
+          <StatCard emoji="📅" label="Booking Hari Ini" value={stats?.bookingsToday || 0} />
+          <StatCard emoji="🔧" label="Perawatan" value={stats?.maintenanceCourts || 0} />
         </div>
 
-        {/* Action Bar */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <select style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              backgroundColor: 'white',
-              fontSize: '0.95rem',
-              cursor: 'pointer'
-            }}>
-              <option value="">Semua Jenis</option>
-              <option value="futsal">Futsal</option>
-              <option value="badminton">Badminton</option>
-              <option value="basket">Basket</option>
-              <option value="tennis">Tennis</option>
-            </select>
-            
-            <select style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              backgroundColor: 'white',
-              fontSize: '0.95rem',
-              cursor: 'pointer'
-            }}>
-              <option value="">Semua Status</option>
-              <option value="available">Tersedia</option>
-              <option value="booked">Dipesan</option>
-              <option value="maintenance">Perawatan</option>
-            </select>
-          </div>
-
-          <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={20} />
-            Tambah Lapangan Baru
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-primary" onClick={handleAddClick} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={20} /> Tambah Lapangan
           </button>
         </div>
 
-        {/* Courts Grid */}
         <div className="grid-3">
-          {courts.map((court) => {
-            const statusColors = getStatusColor(court.status);
-            const typeColor = getTypeColor(court.type);
-            
+          {courts.map((court: any) => {
+            const price = court.pricePerHour || 0;
+            const categoryName = court.field_categories?.[0]?.categories?.name || 'Umum';
+            const statusColors = getStatusColor(court.is_available ? 'available' : 'maintenance');
+
             return (
-              <div key={court.id} style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e5e7eb',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                position: 'relative'
-              }}>
-                {/* Header with Icon */}
-                <div style={{
-                  backgroundColor: typeColor + '20',
-                  padding: '24px',
-                  textAlign: 'center',
-                  borderBottom: '1px solid #e5e7eb'
-                }}>
-                  <div style={{
-                    fontSize: '3rem',
-                    marginBottom: '12px',
-                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-                  }}>
-                    {getTypeIcon(court.type)}
-                  </div>
-                  <h3 style={{
-                    fontSize: '1.25rem',
-                    fontWeight: '700',
-                    color: '#1f2937',
-                    marginBottom: '8px'
-                  }}>
-                    {court.name}
-                  </h3>
-                  <div style={{
-                    display: 'inline-block',
-                    padding: '6px 16px',
-                    borderRadius: '20px',
-                    backgroundColor: statusColors.bg,
-                    color: statusColors.text,
-                    fontSize: '0.75rem',
-                    fontWeight: '600'
-                  }}>
-                    {getStatusText(court.status)}
-                  </div>
+              <div key={court.id.toString()} className="court-card shadow-sm border" style={{ backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                <div style={{ backgroundColor: '#f8fafc', padding: '20px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>{getTypeIcon(categoryName)}</div>
+                  <h3 style={{ fontWeight: '700' }}>{court.name}</h3>
+                  <span style={{ backgroundColor: statusColors.bg, color: statusColors.text, padding: '4px 12px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                    {court.is_available ? 'Tersedia' : 'Perawatan'}
+                  </span>
                 </div>
 
-                {/* Details */}
-                <div style={{ padding: '24px' }}>
-                  <div style={{ marginBottom: '20px' }}>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px' }}>Deskripsi</p>
-                    <p style={{ color: '#1f2937', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                      {court.description}
-                    </p>
+                <div style={{ padding: '20px' }}>
+                  <div style={{ marginBottom: '15px' }}>
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold' }}>📍 LOKASI</p>
+                    <p style={{ fontSize: '0.85rem', color: '#1f2937' }}>{court.full_address}</p>
+                    <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>{court.city}, {court.province}</p>
                   </div>
 
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px',
-                    marginBottom: '20px'
-                  }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
                     <div>
-                      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Kapasitas</p>
-                      <p style={{ fontWeight: '600', color: '#1f2937' }}>{court.capacity} orang</p>
+                      <p style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold' }}>🕒 OPERASIONAL</p>
+                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                        {formatTime(court.opening_time)} - {formatTime(court.closing_time)}
+                      </p>
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Ukuran</p>
-                      <p style={{ fontWeight: '600', color: '#1f2937' }}>{court.size}</p>
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Booking Hari Ini</p>
-                      <p style={{ fontWeight: '600', color: '#1f2937' }}>{court.bookingsToday} booking</p>
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Harga/Jam</p>
-                      <p style={{ fontWeight: '600', color: '#1f2937', fontSize: '1.1rem' }}>
-                        Rp {court.price.toLocaleString()}
+                      <p style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold' }}>💰 HARGA</p>
+                      <p style={{ fontSize: '0.85rem', fontWeight: '700', color: '#059669' }}>
+                        Rp {Number(price).toLocaleString('id-ID')}
                       </p>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    borderTop: '1px solid #e5e7eb',
-                    paddingTop: '20px'
-                  }}>
-                    <button className="btn btn-secondary" style={{ flex: 1, padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <Calendar size={16} />
-                      Jadwal
-                    </button>
-                    <button className="btn btn-secondary" style={{ flex: 1, padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <Edit size={16} />
-                      Edit
-                    </button>
+                  <div style={{ marginBottom: '15px' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 'bold' }}>Deskripsi</p>
+                    <p style={{ color: '#1f2937', marginBottom: '20px', fontSize: '0.9rem' }}>
+                      {court.description || 'Tidak ada deskripsi lapangan.'}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', paddingTop: '15px', borderTop: '1px solid #f3f4f6' }}>
+                    <button className="btn btn-secondary flex-1" onClick={() => handleEditClick(court)} style={{ flex: 1, fontSize: '0.8rem' }}><Edit size={14}/> Edit</button>
                     <button 
-                      className="btn btn-danger" 
-                      style={{ flex: 1, padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                      onClick={() => handleDeleteCourt(court.id)}
+                      className="btn btn-danger flex-1" 
+                      style={{ flex: 1, fontSize: '0.8rem' }}
+                      onClick={() => handleDeleteCourt(court.id.toString())}
                     >
-                      <Trash2 size={16} />
-                      Hapus
+                      <Trash2 size={14}/> Hapus
                     </button>
                   </div>
                 </div>
@@ -295,9 +219,24 @@ const MitraCourts: React.FC = () => {
             );
           })}
         </div>
+        {isFormOpen && (
+          <CourtForm 
+            court={selectedCourt} 
+            onSave={handleSaveCourt} 
+            onCancel={() => setIsFormOpen(false)} 
+          />
+        )}
       </div>
     </div>
   );
 };
+
+const StatCard = ({ emoji, label, value }: any) => (
+  <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{emoji}</div>
+    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{label}</div>
+    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{value}</div>
+  </div>
+);
 
 export default MitraCourts;

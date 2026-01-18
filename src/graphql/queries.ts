@@ -116,6 +116,9 @@ export const LOGIN_MUTATION = gql`
         email
         phone
         role
+        venues {
+          id
+        }
       }
     }
   }
@@ -140,6 +143,67 @@ export const GET_MY_BOOKINGS = gql`
       ownerName
       ownerPhone
       paymentTime
+    }
+  }
+`;
+
+export const GET_PARTNER_COURTS = gql`
+  query GetPartnerCourts($venueId: ID!) {
+    getPartnerCourts(venueId: $venueId) {
+      id
+      name
+      description
+      pricePerHour
+      is_available
+      city
+      province
+      full_address
+      opening_time
+      closing_time
+      bookingsToday
+      # Tambahkan field berikut jika didukung backend
+      # capacity 
+      # size
+      # todayBookingsCount
+      field_categories {
+        categories {
+          name
+        }
+      }
+      field_images {
+        image_path
+      }
+    }
+  }
+`;
+
+export const GET_PARTNER_STATS = gql`
+  query GetPartnerStats($venueId: ID!) {
+    getPartnerStats(venueId: $venueId) {
+      totalCourts
+      availableCourts
+      maintenanceCourts
+      bookingsToday
+    }
+  }
+`;
+
+export const GET_VENUE_BOOKINGS = gql`
+  query GetVenueBookings($venueId: ID!) {
+    getVenueBookings(venueId: $venueId) {
+      id
+      status
+      payment_status
+      final_amount
+      start_time
+      end_time
+      users {
+        name
+        phone
+      }
+      fields {
+        name
+      }
     }
   }
 `;

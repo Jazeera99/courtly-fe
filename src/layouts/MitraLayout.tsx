@@ -43,7 +43,7 @@ const MitraLayout: React.FC = () => {
       
       {/* Sidebar */}
       <div className={`mitra-sidebar ${sidebarOpen ? 'active' : ''}`}>
-        <Sidebar onClose={isMobile ? closeSidebar : undefined} />
+        <Sidebar />
       </div>
       
       {/* Main Content */}

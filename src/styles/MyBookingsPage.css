@@ -893,3 +893,69 @@
     background-color: #f8f9fa;
     border-color: #ccc;
 }
+
+/* 1. Menyejajarkan Status Paid & Success */
+.status-badges {
+    display: flex;
+    gap: 8px; /* Memberi jarak antar badge */
+    align-items: center;
+    justify-content: flex-end; /* Mendorong ke kanan */
+}
+
+.status-badge, .payment-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: white; /* Teks tetap putih karena backgroundnya gelap */
+}
+
+/* Warna Status (Contoh: Green untuk Success/Paid) */
+.status-badge.paid, .status-badge.SUCCESS, .payment-badge.paid {
+    background-color: #22c55e;
+}
+
+/* 2. Memperbaiki Tombol agar Tulisan Terlihat Jelas */
+.booking-actions {
+    display: flex;
+    flex-direction: column; /* Tombol bertumpuk vertikal */
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-action {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* TOMBOL INVOICE: Background Abu Terang -> Teks harus GELAP */
+.invoice-btn {
+    background-color: #f3f4f6; /* Warna abu-abu sangat muda */
+    color: #374151; /* Warna teks Abu-abu Gelap (Tingkatkan Kontras) */
+    border: 1px solid #d1d5db;
+}
+
+.invoice-btn:hover {
+    background-color: #e5e7eb;
+}
+
+/* TOMBOL ULASAN: Background Kuning Terang -> Teks harus GELAP */
+.review-btn {
+    background-color: #fffbeb; /* Kuning sangat muda */
+    color: #92400e; /* Warna teks Cokelat Tua agar terlihat jelas */
+    border: 1px solid #fcd34d;
+}
+
+.review-btn:hover {
+    background-color: #fef3c7;
+}

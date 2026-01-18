@@ -37,6 +37,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
 
     const completeUserData = { ...user, token };
 
+    if (user.venues && user.venues.length > 0) {
+      // Ambil ID dari venue pertama dan simpan ke localStorage
+      const vId = user.venues[0].id;
+      localStorage.setItem('venueId', vId);
+      console.log("Venue ID berhasil disimpan:", vId);
+    }
+
     // 2. SATUKAN token ke dalam objek user agar tidak terpisah
     const userDataToSave = {
       ...user,

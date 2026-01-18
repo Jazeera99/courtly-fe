@@ -42,3 +42,24 @@ export const MUTATION_CONFIRM = gql`
     }
   }
 `;
+
+export const SAVE_FIELD = gql`
+  mutation SaveField($input: FieldInput!) {
+    saveField(input: $input) {
+      id
+      name
+      description
+      pricePerHour
+      is_available
+      city
+      province
+      full_address
+    }
+  }
+`;
+
+export const DELETE_FIELD = gql`
+  mutation DeleteField($id: ID!) {
+    deleteField(id: $id)
+  }
+`;

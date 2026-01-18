@@ -8,7 +8,7 @@ const Sidebar: React.FC = () => {
   
   const menuItems = [
     { path: '/partner/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/partner/bookings', icon: '📅', label: 'Kelola Booking' },
+    { path: '/partner/bookings', icon: '📅', label: 'Lihat Booking' },
     { path: '/partner/courts', icon: '🏟️', label: 'Lapangan' },
     { path: '/partner/schedule', icon: '🕒', label: 'Jadwal' },
     { path: '/partner/revenue', icon: '💰', label: 'Pendapatan' },
