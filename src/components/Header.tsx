@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApolloClient } from '@apollo/client';
+import logoImg from '../assets/logo.png';
 import '../App.css';
 import '../styles/Header.css';
 
@@ -85,8 +86,16 @@ const Header: React.FC<HeaderProps> = ({
     <header className="header">
       <div className="header-content">
         <Link to="/" className="logo">
-          <span className="logo-icon">🏸</span>
-          <span>Courtly Sidoarjo</span>
+          <img 
+            src={logoImg} 
+            alt="Logo Courtly" 
+            style={{ 
+              height: '65px', // Sedikit diperbesar dari 60px sebelumnya
+              width: 'auto', 
+              objectFit: 'contain',
+              filter: 'drop-shadow(0px 0px 8px rgba(247, 248, 194, 0.53))' // Efek glow tipis
+            }} 
+          />
         </Link>
 
         <nav className={`nav-menu ${mobileMenuOpen ? 'open' : ''}`}>
@@ -111,9 +120,9 @@ const Header: React.FC<HeaderProps> = ({
           )}
           
           {/* Toggle Dark Mode */}
-          <button className="nav-link" onClick={onToggleDarkMode}>
+          {/* <button className="nav-link" onClick={onToggleDarkMode}>
             {darkMode ? '☀️' : '🌙'}
-          </button>
+          </button> */}
 
           {/* LOGIKA AUTH: LOGIN vs GUEST */}
           {userRole === 'guest' ? (

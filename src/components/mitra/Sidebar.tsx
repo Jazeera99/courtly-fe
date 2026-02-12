@@ -1,18 +1,31 @@
-// src/components/mitra/Sidebar.tsx
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
+import { GET_VENUE_PROFILE } from '../../graphql/queries';
 import '../../styles/MitraLayout.css';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   
+  // Ambil venueId dari localStorage (asumsi kamu menyimpannya saat login)
+  const venueId = localStorage.getItem('venueId') || "";
+
+  // 3Panggil data dari database
+  const { data, loading } = useQuery(GET_VENUE_PROFILE, {
+    variables: { venueId },
+    skip: !venueId
+  });
+
+  const ownerName = data?.getVenueProfile?.ownerName || (loading ? "Memuat..." : "MItra");
+  const city = data?.getVenueProfile?.city || "Sidoarjo";
+  const province = data?.getVenueProfile?.province || "Jawa Timur";
+
   const menuItems = [
     { path: '/partner/dashboard', icon: '📊', label: 'Dashboard' },
     { path: '/partner/bookings', icon: '📅', label: 'Lihat Booking' },
     { path: '/partner/courts', icon: '🏟️', label: 'Lapangan' },
     { path: '/partner/schedule', icon: '🕒', label: 'Jadwal' },
     { path: '/partner/revenue', icon: '💰', label: 'Pendapatan' },
-    { path: '/partner/profile', icon: '👤', label: 'Profil' },
   ];
 
   return (
@@ -35,7 +48,7 @@ const Sidebar: React.FC = () => {
           opacity: 0.9,
           marginBottom: '16px'
         }}>
-          GOR Sidonjo Sport Center
+          {city} {province}
         </p>
         <div style={{
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -44,7 +57,7 @@ const Sidebar: React.FC = () => {
           fontSize: '0.75rem',
           display: 'inline-block'
         }}>
-          Pemilik: Vosue Akiti
+          Pemilik: {ownerName}
         </div>
       </div>
 

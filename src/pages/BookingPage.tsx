@@ -1,7 +1,6 @@
 import { GraphQLScalarType, Kind, ValueNode } from 'graphql';
 import { useQuery } from '@apollo/client';
-import { GET_BOOKING_DATA, GET_AVAILABLE_SLOTS } from '../graphql/queries';
-// import { GET_AVAILABLE_SLOTS, GET_BOOKING_DATA } from '../graphql/queries';
+import { GET_BOOKING_DATA, GET_AVAILABLE_SLOTS, GET_FIELDS } from '../graphql/queries';
 import { CREATE_RESERVATION_DRAFT, MUTATION_CONFIRM } from '../graphql/mutations';
 import { useMutation } from '@apollo/client';
 import React, { useState, useEffect } from 'react';
@@ -459,9 +458,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ user: userProp }) => {
 // 2. Definikan courtData SETELAH slotsData ada
 // Pakai slotsData karena di atas kamu menamainya slotsData
 const courtData = slotsData?.fieldDetail; 
-
-
-
+ 
   // Fungsi untuk pilih banyak waktu sekaligus
   const selectMultipleTimeSlots = (startTime: string, endTime: string) => {
     if (!selectedDate || !slotsData) return;
@@ -878,19 +875,18 @@ const courtData = slotsData?.fieldDetail;
         </div>
 
         <div className="filters-row">
-          <select 
+          {/* <select 
             className="filter-select"
             value={sportFilter}
             onChange={(e) => setSportFilter(e.target.value)}
           >
             <option value="all">Semua Olahraga</option>
-            <option value="padel">Padel</option>
-            <option value="futsal">Futsal</option>
-            <option value="basket">Basket</option>
-            <option value="tennis">Tennis</option>
-            <option value="badminton">Badminton</option>
-            <option value="volleyball">Voli</option>
-          </select>
+            {dynamicCategories.map((catName: any) => (
+              <option key={catName} value={catName}>
+                {catName.charAt(0).toUpperCase() + catName.slice(1)}
+              </option>
+            ))}
+          </select> */}
 
           <select 
             className="filter-select"
@@ -955,9 +951,9 @@ const courtData = slotsData?.fieldDetail;
           <h3>🏟️ Pilih Lapangan Tersedia</h3>
           <p className="section-subtitle">Tanggal: {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
-          <div style={{ background: '#f0f8ff', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', color: '#666' }}>
+          {/* <div style={{ background: '#f0f8ff', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '0.9rem', color: '#666' }}>
             <strong>Debug Info:</strong> Selected Date: {selectedDate}
-          </div>
+          </div> */}
           
           <div className="courts-grid">
             {filteredCourts.map(court => (
@@ -1242,7 +1238,7 @@ const renderStep2 = () => {
         ) : availableSlots.length > 0 ? (
           <div>
             {/* RANGE SELECTION BUTTONS */}
-            <div style={{ 
+            {/* <div style={{ 
               display: 'flex', 
               gap: '10px', 
               flexWrap: 'wrap', 
@@ -1272,7 +1268,7 @@ const renderStep2 = () => {
               >
                 🔄 Reset Semua
               </button>
-            </div>
+            </div> */}
 
             {/* GRID SLOT JAM */}
             <div style={{ 
@@ -2281,9 +2277,9 @@ document.head.appendChild(style);
 
   return (
     <div className="booking-page">
-      <div style={{ background: '#ffefc2', padding: '10px', borderRadius: 8, marginBottom: 12, color: '#333', textAlign: 'center' }}>
+      {/* <div style={{ background: '#ffefc2', padding: '10px', borderRadius: 8, marginBottom: 12, color: '#333', textAlign: 'center' }}>
         DEBUG: BookingPage component mounted
-      </div>
+      </div> */}
       
       <div className="booking-header">
         <div className="booking-title-section">

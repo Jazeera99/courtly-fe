@@ -20,6 +20,8 @@ interface Court {
   facilities: string[];
   location: string;
   address: string;
+  city: string;
+  maps_url?: string;
   phone?: string;
   operatingHours?: string;
 }
@@ -59,6 +61,7 @@ const VenueDetailPage: React.FC = () => {
     description: data.fieldDetail.description,
     location: `${data.fieldDetail.city}, ${data.fieldDetail.province}`,
     address: data.fieldDetail.full_address,
+    maps_url: data.fieldDetail.maps_url,
     // phone: data.fieldDetail.phone || "Tidak ada nomor",
     // Ambil semua path gambar dari database
     images: data.fieldDetail.field_images?.length > 0 
@@ -156,7 +159,7 @@ const VenueDetailPage: React.FC = () => {
 
       <div className="venue-content-single">
         {/* Gallery Section */}
-        <div className="venue-gallery-wide">
+        {/* <div className="venue-gallery-wide">
           <div className="main-image-wide">
             <div className="image-placeholder extra large">
               <img src={venue.images[selectedImage]} alt="Main" className="img-fluid-detail" />
@@ -175,7 +178,7 @@ const VenueDetailPage: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Main Info Section */}
         <div className="venue-main-info-full">
@@ -233,10 +236,19 @@ const VenueDetailPage: React.FC = () => {
               {/* Tombol Maps */}
               <button 
                 className="maps-button"
-                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`, '_blank')}
+                onClick={() => {
+                  if (venue.maps_url) {
+                    window.open(venue.maps_url, '_blank');
+                  } else {
+                    // Perbaikan Fallback: pastikan string template benar
+                    const address = venue.maps_url || `${venue.name}, ${venue.location}`;
+                    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+                    window.open(googleMapsUrl, '_blank');
+                  }
+                }}
               >
                 🗺️ Buka di Google Maps
-              </button>
+              </button> 
             </div>
           </div>
 

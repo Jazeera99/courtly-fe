@@ -79,9 +79,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, initialEmail }) => {
           <label htmlFor="password" className="form-label">
             Password
           </label>
-          <button type="button" className="forgot-password-btn">
+          {/* <button type="button" className="forgot-password-btn">
             Lupa password?
-          </button>
+          </button> */}
         </div>
         <input
           type="password"
@@ -96,14 +96,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, initialEmail }) => {
           autoComplete="current-password"
         />
         {/* Info untuk testing */}
-        <div className="password-hint">
+        {/* <div className="password-hint">
           <small>
             <strong>Akun testing:</strong><br />
             • Admin: admin@courtly.com / admin123<br />
             • Mitra: mitra@courtly.com / mitra123<br />
             • User: user@courtly.com / user123
           </small>
-        </div>
+        </div> */}
       </div>
 
       {error && (

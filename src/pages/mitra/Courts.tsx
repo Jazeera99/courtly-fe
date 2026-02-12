@@ -14,7 +14,7 @@ const MitraCourts: React.FC = () => {
   const [saveField] = useMutation(SAVE_FIELD);
   const [deleteField] = useMutation(DELETE_FIELD);
 
-  // 1. Tambahkan Fungsi Helper untuk Format Jam di sini
+  // Tambahkan Fungsi Helper untuk Format Jam di sini
   const formatTime = (timeString: string) => {
     if (!timeString) return '--:--';
     try {
@@ -31,7 +31,7 @@ const MitraCourts: React.FC = () => {
   };
 
   const { data: statsData, loading: statsLoading } = useQuery(GET_PARTNER_STATS, {
-    variables: { venueId },
+    variables: { venueId, timeRange: "year" },
     skip: !venueId,
   });
 
@@ -135,7 +135,7 @@ const MitraCourts: React.FC = () => {
     );
   }
 
-  const stats = statsData?.getPartnerStats;
+  const stats = statsData?.getPartnerStats.stats;
   const courts = courtsData?.getPartnerCourts || [];
 
   return (
@@ -221,9 +221,12 @@ const MitraCourts: React.FC = () => {
         </div>
         {isFormOpen && (
           <CourtForm 
-            court={selectedCourt} 
+            court={selectedCourt}
             onSave={handleSaveCourt} 
-            onCancel={() => setIsFormOpen(false)} 
+            onCancel={() => {
+              setIsFormOpen(false);
+              setSelectedCourt(null);
+            }} 
           />
         )}
       </div>

@@ -261,7 +261,15 @@ const MyBookingsPage: React.FC = () => {
                 <div className="booking-id">
                   <div className="invoice-number">
                     <strong>#{booking.invoiceNumber}</strong>
-                    <span className="booking-date-small"> 📅 {new Date(booking.createdAt).toLocaleDateString('id-ID')}</span>
+                    {/* <span className="booking-date-small"> 
+                      ⌛Tanggal: {booking.paymentTime
+                        ? new Date(booking.paymentTime).toLocaleDateString('id-ID', { 
+                            day: '2-digit', 
+                            month: 'long', 
+                            year: 'numeric' 
+                          }) 
+                        : 'Tidak ada data'}
+                    </span> */}
                   </div>
                   <div className="status-badges">
                     <span className={`status-badge ${booking.status}`}>{booking.status}</span>
@@ -305,7 +313,7 @@ const MyBookingsPage: React.FC = () => {
                   <div className="booking-actions">
                     <button className="btn-action invoice-btn" onClick={() => handleDownloadInvoice(booking)}>📄 Invoice</button>
                     
-                    {canCancelBooking(booking) && (
+                    {/* {canCancelBooking(booking) && (
                       <button className="btn-action cancel-btn">❌ Batalkan</button>
                     )}
                     
@@ -313,7 +321,7 @@ const MyBookingsPage: React.FC = () => {
                       <button className="btn-action review-btn" onClick={() => { setSelectedBooking(booking); setShowReviewModal(true); }}>⭐ Ulasan</button>
                     )}
 
-                    {hasReview(booking.id) && <button className="btn-action view-review-btn">📝 Lihat Ulasan</button>}
+                    {hasReview(booking.id) && <button className="btn-action view-review-btn">📝 Lihat Ulasan</button>} */}
                   </div>
                 </div>
               </div>
@@ -326,10 +334,10 @@ const MyBookingsPage: React.FC = () => {
       {showReviewModal && selectedBooking && (
         <div className="review-modal-overlay">
           <div className="review-modal">
-            <div className="modal-header">
+            {/* <div className="modal-header">
               <h3>⭐ Beri Ulasan</h3>
               <button className="close-modal" onClick={() => setShowReviewModal(false)}>✕</button>
-            </div>
+            </div> */}
             <div className="modal-body">
               <p>Bagaimana pengalaman Anda di <strong>{selectedBooking.courtName}</strong>?</p>
               <div className="star-rating">

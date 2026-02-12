@@ -69,6 +69,7 @@ export const GET_FIELD_DETAIL = gql`
       name
       description
       full_address
+      maps_url
       city
       province
       pricePerHour
@@ -134,6 +135,7 @@ export const GET_MY_BOOKINGS = gql`
       status
       price
       createdAt
+      paymentTime
       paymentStatus
       paymentMethod
       timeSlots
@@ -177,13 +179,61 @@ export const GET_PARTNER_COURTS = gql`
   }
 `;
 
+// export const GET_PARTNER_STATS = gql`
+//   query GetPartnerStats($venueId: ID!) {
+//     getPartnerStats(venueId: $venueId) {
+//       totalCourts
+//       availableCourts
+//       maintenanceCourts
+//       bookingsToday
+//       totalRevenue
+//       totalBookings
+//       transactions {
+//         id
+//         customerName
+//         fieldName
+//         amount
+//         date
+//         status
+//       }
+//     }
+//   }
+// `;
+
 export const GET_PARTNER_STATS = gql`
-  query GetPartnerStats($venueId: ID!) {
-    getPartnerStats(venueId: $venueId) {
-      totalCourts
-      availableCourts
-      maintenanceCourts
-      bookingsToday
+  query GetPartnerStats($venueId: String!, $timeRange: String!) {
+    getPartnerStats(venueId: $venueId, timeRange: $timeRange) {
+      stats {
+        totalRevenue
+        totalBookings
+        averagePrice
+        growth
+        totalCourts
+        availableCourts
+        maintenanceCourts
+        bookingsToday
+      }
+      monthlyTrend {
+        month
+        revenue
+        bookings
+      }
+      topCourts {
+        name
+        revenue
+        bookings
+        percentage
+      }
+      transactions {
+        id
+        customerName
+        fieldName
+        amount
+        date
+        status
+        method
+        paidAt 
+      }
     }
   }
 `;
@@ -204,6 +254,52 @@ export const GET_VENUE_BOOKINGS = gql`
       fields {
         name
       }
+    }
+  }
+`;
+
+export const GET_BOOKINGS = gql`
+  query GetVenueBookings($venueId: ID!) {
+    getVenueBookings(venueId: $venueId) {
+      id
+      courtName
+      customerName
+      bookingDate
+      startTime
+      endTime
+      status
+      totalPrice
+    }
+  }
+`;
+
+export const GET_VENUE_SCHEDULE = gql`
+  query GetVenueSchedule($venueId: String!, $date: String!) {
+    getVenueSchedule(venueId: $venueId, date: $date) {
+      courts {
+        id
+        name
+      }
+      timeSlots {
+        time
+        courtStatus # JSON ini sekarang otomatis mengandung field 'customer'
+      }
+    }
+  }
+`;
+
+export const GET_VENUE_PROFILE = gql`
+  query GetVenueProfile($venueId: String!) {
+    getVenueProfile(venueId: $venueId) {
+      id
+      ownerName
+      email
+      phone
+      address
+      city
+      province
+      created_at
+      total_bookings
     }
   }
 `;

@@ -40,6 +40,7 @@ html, body {
   width: 100%;
   max-width: 100%;
   padding: 24px;
+  padding-top: 100px;
 }
 
 .page-header {
@@ -660,6 +661,114 @@ html, body {
   .booking-filters input[type="text"] {
     width: 100%;
   }
+}
+
+/* Style dasar tombol filter */
+.btn-filter {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6; /* Warna abu-abu saat tidak dipilih */
+  color: #6b7280;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+/* Efek saat kursor menyentuh tombol (Hover) */
+.btn-filter:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+/* Warna Biru saat tombol AKTIF (diklik) */
+.btn-filter.active {
+  background: #3b82f6 !important; /* Warna biru */
+  color: white !important;
+  border-color: #3b82f6;
+  font-weight: 600;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.bar-item:hover {
+  background: #2563eb !important; /* Warna biru lebih gelap saat hover */
+  filter: brightness(1.1);
+}
+
+/* Container Utama */
+.table-container-vertical {
+    max-height: 400px; /* Batas tinggi agar muncul scroll vertikal */
+    overflow-y: auto;  /* Scroll Vertikal */
+    overflow-x: hidden; /* Hilangkan Scroll Horizontal */
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+/* Tabel Modern */
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.95rem;
+}
+
+.modern-table thead {
+    position: sticky; /* Header tetap terlihat saat scroll */
+    top: 0;
+    background: #f8fafc;
+    z-index: 10;
+}
+
+.modern-table th {
+    padding: 12px 16px;
+    text-align: left;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.modern-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.modern-table tr:hover {
+    background-color: #f1f5f9; /* Efek hover baris */
+}
+
+/* Badge Status */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-paid {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-pending {
+    background-color: #fef9c3;
+    color: #854d0e;
+}
+
+.font-bold {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Sembunyikan scrollbar agar terlihat bersih (Opsional) */
+.table-container-vertical::-webkit-scrollbar {
+    width: 6px;
+}
+.table-container-vertical::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
 /* Utility Classes */

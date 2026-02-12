@@ -79,8 +79,14 @@ const CourtForm: React.FC<CourtFormProps> = ({ court, onSave, onCancel }) => {
       display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px'
     }}>
       <div className="modal-content" style={{
-        backgroundColor: '#fcfcfd', width: '100%', maxWidth: '750px', borderRadius: '24px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)', overflow: 'hidden'
+        backgroundColor: '#fcfcfd', 
+        width: '100%', 
+        maxWidth: '750px', 
+        borderRadius: '24px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)', 
+        overflowY: 'auto',
+        maxHeight: '90vh',
+        position: 'relative'
       }}>
         
         {/* HEADER */}

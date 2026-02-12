@@ -1,4 +1,52 @@
-/* Styling untuk Dropdown Profil di Header */
+.header {
+  /* Gradient Biru Deep ke Royal Blue agar Logo Hijau-Oranye lebih 'pop' */
+  background: linear-gradient(135deg, #7d9fee 0%, #1e3a8a 50%, #2563eb 100%);
+  
+  /* Tambahkan sedikit glassmorphism effect */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  /* Bayangan halus di bawah navbar */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  
+  padding: 0.5rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+}
+
+/* Animasi saat link dihover agar terasa interaktif */
+.nav-link {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #34d399; /* Hijau neon menyesuaikan aksen logo */
+  transform: translateY(-2px);
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #f59e0b; /* Aksen Oranye menyesuaikan logo */
+  border-radius: 2px;
+}
+
 .user-dropdown-menu {
   position: absolute;
   top: 50px; /* Jarak dari tombol */

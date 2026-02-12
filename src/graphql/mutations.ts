@@ -63,3 +63,16 @@ export const DELETE_FIELD = gql`
     deleteField(id: $id)
   }
 `;
+
+export const UPDATE_VENUE_PROFILE = gql`
+  mutation UpdateVenueProfile($input: UpdateProfileInput!) {
+    updateVenueProfile(input: $input) { # BENAR: Sesuai dengan schema.ts backend
+      ownerName
+      address
+      city
+      province
+      email
+      phone
+    }
+  }
+`;

@@ -1,12 +1,33 @@
-// src/components/mitra/VenueInfoCard.tsx
 import React from 'react';
 import '../../styles/PartnerDashboard.css';
 
-const VenueInfoCard: React.FC = () => {
+interface VenueInfoCardProps {
+  venue: any;
+  loading: boolean;
+}
+
+const VenueInfoCard: React.FC<VenueInfoCardProps> = ({ venue, loading }) => {
+  if (loading) return <div className="venue-info-card animate-pulse">Memuat data venue...</div>;
+ 
   return (
     <div className="venue-info-card">
       <div className="venue-info-header">
-        <h2>GOR Sidonjo Sport Center</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {/* NAMA GOR & DROPDOWN LAPANGAN */}
+          <h2 style={{ margin: 0 }}>🏟️ {venue?.name || "GOR Sport Center"}</h2>
+          <select 
+            className="field-dropdown-mini"
+            style={{ padding: '4px', borderRadius: '4px', fontSize: '0.8rem', border: '1px solid #ddd' }}
+          >
+            <option>Semua Lapangan ({venue?.fields?.length || 0})</option>
+            {venue?.fields?.map((field: any) => (
+              <option key={field.id} value={field.id}>
+                {/* Cek apakah field.price atau field.price_per_hour yang benar di API kamu */}
+                {field.name} - Rp {(field.pricePerHour || field.price || 0).toLocaleString()}
+              </option>
+            ))}
+          </select>
+        </div>
         <span className="venue-status">● Buka</span>
       </div>
       
@@ -15,7 +36,7 @@ const VenueInfoCard: React.FC = () => {
           <div className="detail-icon">👤</div>
           <div>
             <div className="detail-label">Pemilik</div>
-            <div className="detail-value">Vosue Akiti</div>
+            <div className="detail-value">{venue?.users?.name || 'Admin'}</div>
           </div>
         </div>
         
@@ -23,7 +44,7 @@ const VenueInfoCard: React.FC = () => {
           <div className="detail-icon">📍</div>
           <div>
             <div className="detail-label">Alamat</div>
-            <div className="detail-value">Jl. Shisham Ma No. 45, Sidonjo</div>
+            <div className="detail-value">{venue?.address ? `${venue.address}, ${venue.city || ''}` : 'Alamat belum tersedia'}</div>
           </div>
         </div>
         
@@ -31,7 +52,7 @@ const VenueInfoCard: React.FC = () => {
           <div className="detail-icon">📞</div>
           <div>
             <div className="detail-label">Telepon</div>
-            <div className="detail-value">0019 990124</div>
+            <div className="detail-value">{venue?.users?.phone || '-'}</div>
           </div>
         </div>
         
